@@ -1,0 +1,23 @@
+{
+  "name": "kerr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A relativistic black hole visualiser scored by a generative cinematic piece, running entirely in the browser.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "npm run build && node scripts/serve.mjs dist",
+    "deploy": "npm run build && wrangler deploy",
+    "check": "node --check scripts/build.mjs && node scripts/check.mjs",
+    "vendor:three": "esbuild src/three-entry.js --bundle --minify --format=iife --target=es2020 --legal-comments=inline --outfile=vendor/three.bundle.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "three": "^0.185.1",
+    "wrangler": "^4.114.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
