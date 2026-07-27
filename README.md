@@ -29,7 +29,7 @@ A single page that draws a spinning black hole the way light actually arrives at
 - **🌀 Geodesic raymarching** — every pixel integrates a null geodesic through Schwarzschild spacetime with an adaptive midpoint scheme. The photon ring, the Einstein ring and the disk's over-and-under lensed images are not drawn; they are what the integrator produces.
 - **🔥 A physically-motivated disk** — Keplerian shear, relativistic beaming, Doppler and gravitational redshift, blackbody colour by temperature, and front-to-back opacity so the disk occludes its own far side.
 - **🎼 A live score** — pipe organ, string ensemble, choir formants, a bell arpeggio, timpani and a clock tick, sequenced through ten sections in D minor by a Web Audio graph built from oscillators and filters.
-- **🎚️ Three output voicings** — the same performance re-mixed for laptop speakers, powered monitors, or headphones. This is a real signal-path change, not a preset name.
+- **🎚️ Three output voicings, picked for you** — the same performance re-mixed for built-in speakers, powered monitors, or headphones, chosen automatically and overridable in one tap. This is a real signal-path change, not a preset name.
 - **🎧 Bring your own audio** — drop any file on the page and the visualiser drives itself from an FFT and onset detector instead.
 
 ---
@@ -73,11 +73,22 @@ Small speakers cannot move air below roughly 150 Hz, so the fix is not to boost 
 
 | | High-pass | Sub-bass 15–35 Hz | Weight 55–100 Hz | Stereo width | Compression |
 | --- | --- | --- | --- | --- | --- |
-| **Laptop** | 48 Hz | −37.8 dB | −25.8 dB | 1.00 | most |
+| **Built-in** | 48 Hz | −37.8 dB | −25.8 dB | 1.00 | most |
 | **Speakers** | 33 Hz | −32.5 dB | −30.8 dB | 1.35 | least |
 | **Headphones** | 25 Hz | −30.3 dB | −29.3 dB | 0.90 | middle |
 
-Laptop mode trades sub energy for the harmonics that imply it. Speakers mode assumes a real woofer, so the exciter mostly steps aside — but it still filters below 33 Hz, because feeding a small driver infrasound only costs excursion. It gets the widest image and the least compression, since there is physical speaker separation and a real amplifier to use. Bass stays mono in every mode; only the mid/side stage widens.
+Built-in mode trades sub energy for the harmonics that imply it, and covers laptop and phone speakers alike — both are small drivers with nothing under ~150 Hz. Speakers mode assumes a real woofer, so the exciter mostly steps aside — but it still filters below 33 Hz, because feeding a small driver infrasound only costs excursion. It gets the widest image and the least compression, since there is physical speaker separation and a real amplifier to use. Bass stays mono in every mode; only the mid/side stage widens.
+
+### What Auto can and cannot know
+
+Auto is the default, and it is honest about being a guess. The browser will tell you two things:
+
+- **Device class**, from User-Agent Client Hints and touch points — a phone or tablet versus a laptop or desktop.
+- **`AudioContext.outputLatency`** — about 10 ms on a built-in output, past 100 ms once the signal is going over a wireless link.
+
+It will not tell you what is on the other end. `enumerateDevices()` returns a single entry with an empty label and an empty id until the page holds a **microphone** permission, and prompting for the mic just to choose an EQ curve is not a trade worth making. So nothing on the web can spot a KEF LSX II on the end of a cable.
+
+Auto therefore picks **built-in** by default and **headphones** when it sees a wireless link, since earbuds are much the more common wireless output — and the line under the buttons says which guess it made and why, rather than implying a certainty the browser cannot give. **Powered speakers stay a deliberate choice.** Pick any mode yourself and Auto stands down: the choice is remembered, and a later device change will not second-guess it. While Auto _is_ in charge it re-checks whenever the output device changes, so plugging in headphones re-voices the mix on the spot.
 
 ---
 
@@ -157,7 +168,7 @@ Live telemetry sits at top left — spin, horizon, ISCO, the disk's inner edge, 
 | ← → | Skip 10 s |
 | ↑ ↓ | Volume |
 | `R` | Restart |
-| `V` | Cycle output voicing |
+| `V` | Cycle voicing: auto / built-in / speakers / headphones |
 | `F` | Fullscreen |
 | `H` or `?` | Shortcuts |
 | Drop a file | Visualise your own audio |

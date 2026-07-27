@@ -83,12 +83,24 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
 .pick{margin-top:36px;text-align:center}
 .picklabel{display:block;font-size:9px;letter-spacing:.28em;color:var(--dim);
   text-transform:uppercase;margin-bottom:10px}
-.seg2{display:inline-flex;border:1px solid var(--line)}
-.seg2 button{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:9.5px;
-  letter-spacing:.2em;text-transform:uppercase;padding:11px 18px;cursor:pointer;
-  transition:color .25s,background .25s}
+/* Even columns. The four labels differ in length, and ragged segments in a
+   control this small read as broken rather than as emphasis. minmax(0,1fr)
+   so the longest label shrinks its own cell instead of stretching the row. */
+.seg2{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  border:1px solid var(--line);max-width:456px;margin:0 auto}
+.seg2 button{background:none;border:0;border-left:1px solid var(--line);
+  color:var(--dim);font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase;padding:11px 4px;cursor:pointer;
+  transition:color .25s,background .25s;white-space:nowrap}
+.seg2 button:first-child{border-left:0}
 .seg2 button.on{color:#05060a;background:var(--ember)}
-.seg2 button:focus-visible{outline:1px solid var(--ember);outline-offset:2px}
+.seg2 button:focus-visible{outline:1px solid var(--ember);outline-offset:-2px}
+/* Says what you are about to hear — and, on Auto, what was guessed and why.
+   Reserved height so resolving the guess does not shift the button row. */
+.pickwhy{display:block;margin-top:11px;font-size:9px;letter-spacing:.14em;
+  color:var(--dim);text-transform:uppercase;min-height:28px;line-height:1.5;
+  padding:0 12px;text-wrap:balance}
+.pickwhy b{color:var(--ember);font-weight:400}
 .note{margin-top:24px;font-size:9.5px;letter-spacing:.16em;color:var(--dim);text-align:center;padding:0 24px}
 .note a{color:var(--dim);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 
@@ -129,6 +141,9 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
      background:rgba(4,6,11,.88);outline:none}
 .btn:focus-visible{box-shadow:0 0 0 2px rgba(255,178,87,.45)}
 .btn.on{color:var(--ion);border-color:var(--ion)}
+/* this label changes with the mode (AUTO / BUILT-IN / SPEAKERS / PHONES);
+   a floor on the width stops the whole control row reflowing as it cycles */
+#bVoice{min-width:86px}
 
 .vol{display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.30);
      background:rgba(4,6,11,.72);-webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
@@ -227,8 +242,14 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
   /* controls stay reachable on phones — they used to be hidden entirely,
      which left no way to pause or change output. left+right gives the row a
      real width so it wraps instead of running off the edge. */
-  .tr{top:calc(5.2vh + 12px);left:14px;right:14px;gap:6px;row-gap:6px}
-  .btn{font-size:8px;padding:9px 8px;letter-spacing:.12em}
+  /* six controls in ~347px: at 6px gaps and 8px padding the row came to
+     356px and wrapped, stranding the "?" alone on a second line. Trimming
+     the gap and the side padding buys 21px, which fits it on one row.
+     Under a coarse pointer the 44px touch rules below win and it wraps
+     anyway — a finger-sized target is worth more than a tidy row. */
+  .tr{top:calc(5.2vh + 12px);left:14px;right:14px;gap:5px;row-gap:6px}
+  .btn{font-size:8px;padding:9px 7px;letter-spacing:.12em}
+  #bVoice{min-width:62px}
   .vol{padding:0 9px}
   .vol input{width:56px}
   /* the "VOL" caption does not fit, so the track has to carry the meaning —
@@ -251,6 +272,14 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
   .eyebrow{font-size:9px;letter-spacing:.3em;padding:0 20px;text-align:center}
   .specs{gap:16px 24px;max-width:230px;margin-left:auto;margin-right:auto;margin-top:28px}
   .pick{margin-top:28px}
+  /* Four segments across a phone leaves "Headphones" ~76px of cell; it fits
+     but only just, and any larger text setting breaks it. Two rows of two
+     keeps the cells even and the labels whole. */
+  .seg2{grid-template-columns:repeat(2,minmax(0,1fr));max-width:300px}
+  .seg2 button{font-size:9px;letter-spacing:.12em}
+  .seg2 button:nth-child(3){border-left:0}
+  .seg2 button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .pickwhy{min-height:34px;padding:0}
   #go{padding:16px 30px;letter-spacing:.28em}
   /* "EVENT HORIZON" is 13 characters — at full tracking it runs off a phone */
   #dropName{font-size:clamp(19px,5.6vw,30px)}
@@ -296,7 +325,7 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
     <button class="btn" id="bPause" aria-label="Pause or resume">PAUSE</button>
     <div class="vol"><span>VOL</span>
       <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
-    <button class="btn" id="bVoice" aria-label="Toggle speaker voicing">SPEAKERS</button>
+    <button class="btn" id="bVoice" aria-label="Change output voicing">AUTO</button>
     <button class="btn" id="bLoad" aria-label="Play your own audio file">OWN TRACK</button>
     <button class="btn" id="bFull" aria-label="Toggle fullscreen">FULL</button>
     <button class="btn" id="bHelp" aria-label="Keyboard shortcuts">?</button>
@@ -332,7 +361,7 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
       <dt>← →</dt><dd>Skip 10 seconds</dd>
       <dt>↑ ↓</dt><dd>Volume</dd>
       <dt>R</dt><dd>Restart from the beginning</dd>
-      <dt>V</dt><dd>Cycle laptop / speakers / headphones</dd>
+      <dt>V</dt><dd>Cycle auto / built-in / speakers / headphones</dd>
       <dt>F</dt><dd>Fullscreen</dd>
       <dt>H or ?</dt><dd>Show or hide this panel</dd>
       <dt>Drop a file</dt><dd>Visualise your own audio</dd>
@@ -356,10 +385,12 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
   <div class="pick">
     <span class="picklabel">Playing through</span>
     <div class="seg2" role="group" aria-label="Output voicing">
-      <button data-voice="laptop" class="on" aria-pressed="true">Laptop</button>
+      <button data-voice="auto" class="on" aria-pressed="true">Auto</button>
+      <button data-voice="laptop" aria-pressed="false">Built-in</button>
       <button data-voice="monitors" aria-pressed="false">Speakers</button>
       <button data-voice="phones" aria-pressed="false">Headphones</button>
     </div>
+    <span class="pickwhy" id="pickwhy" aria-live="polite"></span>
   </div>
   <button id="go">Enter the well</button>
   <div class="note">
@@ -1872,33 +1903,102 @@ $('bFull').onclick = () => {
   else document.exitFullscreen();
 };
 const VOICE_KEY = 'kerr.voicing';
-const VOICE_ORDER = ['laptop', 'monitors', 'phones'];
-const VOICE_LABEL = { laptop:'LAPTOP', monitors:'SPEAKERS', phones:'PHONES' };
-const VOICE_DESC  = { laptop:'Voiced for laptop speakers',
+const VOICE_ORDER = ['auto', 'laptop', 'monitors', 'phones'];
+const VOICE_LABEL = { auto:'AUTO', laptop:'BUILT-IN', monitors:'SPEAKERS', phones:'PHONES' };
+const VOICE_DESC  = { laptop:'Voiced for laptop and phone speakers',
                       monitors:'Voiced for powered speakers',
                       phones:'Voiced for headphones' };
+
+/* What the platform will tell us about the output, and what it will not.
+   enumerateDevices() returns a single entry with an empty label and an empty
+   id until the page holds a microphone permission — so the make and model
+   are off the table, and prompting for the mic to choose an EQ curve is not
+   a trade worth making. Two honest signals are left:
+
+     device class    from UA-CH and touch points, which separates a handheld
+                     from a laptop or desktop
+     outputLatency   ~10ms on a built-in output; a wireless link pushes it
+                     past 100ms
+
+   Wireless tells us the output is not the built-in speaker. It does not tell
+   us whether it is earbuds or a pair of powered speakers. Earbuds are much
+   the more common answer, so that is the guess — and the caption says which
+   guess it made, rather than implying a certainty the browser cannot give.
+   Powered speakers stay a deliberate choice; nothing on the web can spot a
+   KEF LSX II on the other end of a cable. */
+function detectOutput(){
+  const ua = navigator.userAgent, uad = navigator.userAgentData;
+  const mobile = uad && typeof uad.mobile === 'boolean' ? uad.mobile
+                                                        : /Android|iPhone|iPod/i.test(ua);
+  // iPadOS presents itself as a Mac; the touch points give it away
+  const handheld = mobile || (navigator.maxTouchPoints > 1 && /Macintosh|iPad/.test(ua));
+  const c = Audio.ctx;
+  const lat = c && c.state === 'running' ? (c.outputLatency || 0) : 0;
+  const wireless = lat > 0.06;
+  return { mode: wireless ? 'phones' : 'laptop', handheld, wireless, lat };
+}
+
+let voicePref = 'auto', autoOut = null;
+
+function voiceWhy(){
+  if (voicePref !== 'auto') return VOICE_DESC[voicePref];
+  // says what was observed and what was chosen from it — the browser knows
+  // the device class and whether the link is wireless, and nothing more
+  const o = autoOut;
+  // the space before the break matters: aria-live reads the text layer, where
+  // a bare <br> would run the two sentences together
+  if (o.wireless) return 'Wireless output — voiced for <b>headphones</b>. <br>On powered speakers, tap Speakers';
+  return (o.handheld ? 'Phone or tablet' : 'Laptop or desktop') + ' — voiced for <b>built-in</b>';
+}
+
 function setVoice(mode){
-  if (!VOICE_ORDER.includes(mode)) mode = 'laptop';
-  Audio.setVoicing(mode);
+  if (!VOICE_ORDER.includes(mode)) mode = 'auto';
+  voicePref = mode;
+  autoOut = detectOutput();
+  Audio.setVoicing(mode === 'auto' ? autoOut.mode : mode);
   try { localStorage.setItem(VOICE_KEY, mode); } catch(e){}
+  // the segments track what you *chose*, so Auto stays lit while it is in charge
   document.querySelectorAll('.seg2 [data-voice]').forEach(b => {
     const on = b.dataset.voice === mode;
     b.classList.toggle('on', on);
     b.setAttribute('aria-pressed', String(on));
   });
   const b = $('bVoice');
-  if (b){ b.textContent = VOICE_LABEL[mode]; b.classList.toggle('on', mode !== 'laptop'); }
+  if (b){ b.textContent = VOICE_LABEL[mode]; b.classList.toggle('on', mode !== 'auto'); }
+  const w = $('pickwhy');
+  if (w) w.innerHTML = voiceWhy();
 }
+
+/* Re-run the guess. outputLatency means nothing until the context is running,
+   so the wireless check cannot happen until after the first gesture, and the
+   device list changes again whenever headphones are plugged in or a speaker
+   wakes up. Only ever while Auto is in charge — an explicit choice should not
+   be second-guessed by a heuristic. */
+function refreshAuto(announce){
+  if (voicePref !== 'auto') return;
+  const was = autoOut && autoOut.mode;
+  setVoice('auto');
+  if (announce && was && autoOut.mode !== was) toast(VOICE_DESC[autoOut.mode]);
+}
+
 document.querySelectorAll('.seg2 [data-voice]').forEach(b => {
   b.onclick = () => setVoice(b.dataset.voice);
 });
 function cycleVoice(){
-  const next = VOICE_ORDER[(VOICE_ORDER.indexOf(Audio.voicing) + 1) % VOICE_ORDER.length];
+  const next = VOICE_ORDER[(VOICE_ORDER.indexOf(voicePref) + 1) % VOICE_ORDER.length];
   setVoice(next);
-  toast(VOICE_DESC[next]);
+  toast(next === 'auto'
+    ? 'Auto — ' + VOICE_DESC[autoOut.mode].replace('Voiced for ', '')
+    : VOICE_DESC[next]);
 }
 $('bVoice').onclick = cycleVoice;
-try { const v = localStorage.getItem(VOICE_KEY); if (v) setVoice(v); } catch(e){}
+
+if (navigator.mediaDevices && 'ondevicechange' in navigator.mediaDevices){
+  // outputLatency still reports the old sink for a moment after a swap
+  navigator.mediaDevices.addEventListener('devicechange', () => setTimeout(() => refreshAuto(true), 400));
+}
+
+try { setVoice(localStorage.getItem(VOICE_KEY) || 'auto'); } catch(e){ setVoice('auto'); }
 
 $('bLoad').onclick = () => $('file').click();
 $('own').onclick = () => $('file').click();
@@ -1971,6 +2071,8 @@ let started = false;
 function begin(fn){
   if (!Audio.ready) Audio.init();
   fn ? fn() : Audio.start();
+  // first gesture: the context is finally running, so outputLatency can be read
+  setTimeout(() => refreshAuto(true), 350);
   if (started){ buildMap(); return; }
   started = true;
   document.body.classList.remove('boot');
