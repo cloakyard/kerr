@@ -1380,14 +1380,25 @@ void main(){
     }
   }
 
-  vec3 dirf = normalize(v);
-  if (captured < 0.5) col += starField(dirf) * trans;
-
-  /* The photon sphere sits at 1.5 r_s for zero spin and moves inward for a
-     prograde orbit. Most of the ring already falls out of the marcher — rays
-     that loop the hole and strike the disk repeatedly — so this is a thin
-     sharpening pass over the top of it, not the ring itself. */
+  // the photon sphere: 1.5 r_s for zero spin, moving inward for a prograde one
   float ps = mix(1.5, 1.24, uSpin);
+
+  /* Crossing the horizon is not the only way to fail to escape. A ray that
+     spends its whole step budget whipping around the photon sphere leaves the
+     loop with captured still 0 and a direction that means nothing, and
+     sampling the sky with it smeared a faint blue image of the starfield
+     across the inside of the shadow. Anything still this deep in the well
+     when the budget runs out is not getting out; fade it rather than cut, so
+     the shadow's edge stays soft instead of aliasing against the ring. */
+  captured = max(captured, 1.0 - smoothstep(ps * 1.05, ps * 1.9, length(p)));
+  float esc = 1.0 - captured;
+
+  vec3 dirf = normalize(v);
+  col += starField(dirf) * trans * esc;
+
+  /* Most of the photon ring already falls out of the marcher — rays that loop
+     the hole and strike the disk repeatedly — so this is a thin sharpening
+     pass over the top of it, not the ring itself. */
   float pr = exp(-pow((minR - ps) * 11.0, 2.0));
   col += vec3(1.45, 1.16, 0.84) * pr * (0.34 + uBass * 0.8) * trans;
 
@@ -1413,7 +1424,6 @@ void main(){
   // is meaningless, so sampling the particle layer with it painted a ghost
   // image inside the black disc; the shockwave tint did the same.
   vec3 pc = texture2D(uParticles, clamp(puv, vec2(0.002), vec2(0.998))).rgb;
-  float esc = 1.0 - captured;
   col += pc * trans * esc;
   col += vec3(0.5, 0.72, 1.35) * ring * 0.42 * esc;
 
