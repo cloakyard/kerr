@@ -11,7 +11,7 @@
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="MIT License" /></a>
     <img src="https://img.shields.io/badge/platform-Web-blue" alt="Platform: Web" />
     <img src="https://img.shields.io/badge/dependencies-1-brightgreen" alt="One dependency" />
-    <img src="https://img.shields.io/badge/payload-134%20KB%20br-brightgreen" alt="134 KB brotli" />
+    <img src="https://img.shields.io/badge/payload-141%20KB%20br-brightgreen" alt="141 KB brotli" />
   </p>
 
 </div>
@@ -27,7 +27,7 @@
 A single page that draws a spinning black hole the way light actually arrives at a camera near one, and plays a four-minute piece written for it. Everything is computed at runtime — there is no video, no texture, and no audio asset.
 
 - **🌀 Geodesic raymarching** — every pixel integrates a null geodesic through Schwarzschild spacetime with an adaptive midpoint scheme. The photon ring, the Einstein ring and the disk's over-and-under lensed images are not drawn; they are what the integrator produces.
-- **🔥 A physically-motivated disk** — Keplerian shear, relativistic beaming, Doppler and gravitational redshift, blackbody colour by temperature, and front-to-back opacity so the disk occludes its own far side.
+- **🔥 A disk built to _Interstellar_'s own numbers** — DNEG's geometry (`r = 9.26M` to `18.70M`, `a/M = 0.6`), Thorne's position-independent 4500 K, Keplerian shear, and front-to-back opacity so the disk occludes its own far side. The colour is one fixed chroma measured off the film's published render, not a temperature ramp — see below.
 - **🎼 A live score** — pipe organ, string ensemble, choir formants, a bell arpeggio, timpani and a clock tick, sequenced through ten sections in D minor by a Web Audio graph built from oscillators and filters.
 - **🎚️ Three output voicings, picked for you** — the same performance re-mixed for built-in speakers, powered monitors, or headphones, chosen automatically and overridable in one tap. This is a real signal-path change, not a preset name.
 - **🎧 Bring your own audio** — drop any file on the page and the visualiser drives itself from an FFT and onset detector instead.
@@ -57,11 +57,22 @@ Distances are in Schwarzschild radii (`r_s = 1`, so `M = 0.5`). The HUD reports 
 | Horizon | `r_h = M + √(M² − a²)` — shrinks as spin rises. |
 | ISCO | The full Kerr expression, `6M` at `a = 0` falling toward `M` as `a → 1`. |
 | Photon sphere | `1.5 r_s` at zero spin, moving inward for a prograde orbit. |
-| Doppler | `δ = 1 / (γ(1 − β·n̂))`, driving both a colour-temperature shift and beaming. Physically `I_obs ∝ δ³`; the exponent here is eased to ≈1.1 — see below. |
-| Redshift | `√(1 − 1/r)` applied to the emitted temperature. |
+| Doppler | `δ = 1 / (γ(1 − β·n̂))`. Physically `I_obs ∝ δ³`; the exponent here runs at 0.15, so the beaming is present but ±6% — see below. |
+| Redshift | `√(1 − 1/r)`, folded into the same shift factor. |
+| Disk | `r = 9.26M … 18.70M`, one temperature throughout, exactly as specified for the film. |
 | Disk particles | Precessing ellipses driven by the relativistic epicyclic frequency `κ = ω√(1 − 6M/r)`, on a slow inspiral. |
 
-**Where it departs from physics, and why.** The Doppler asymmetry is dialled almost out. DNEG implemented it correctly for _Interstellar_ and then removed it, because a physically-exact render has one blindingly bright edge that reads on screen as a mistake. The frame-dragging term is likewise kept light: it is a perturbation on a Schwarzschild marcher rather than a true Kerr metric, and pushed hard it cuts a notch out of the silhouette instead of smoothly flattening it. The disk's inner edge is held just outside the shadow so its rim stays visible.
+**Where it departs from physics, and why.** The Doppler asymmetry is dialled almost out. DNEG implemented it correctly for _Interstellar_ and then removed it, because a physically-exact render has one blindingly bright edge that reads on screen as a mistake — the two sides differ by a factor of roughly fifty once `I ∝ δ³` is applied, and the shadow disappears into the bright one. The spin is the same kind of compromise, and the reason the two figures above disagree: Gargantua has to turn at `a/M ≈ 1` for an hour on Miller's planet to cost seven years, but at that spin the shadow goes visibly lopsided and its left edge flattens, so Nolan and Franklin slowed it to `0.6` for the camera. The frame-dragging term is likewise kept light: it is a perturbation on a Schwarzschild marcher rather than a true Kerr metric, and pushed hard it cuts a notch out of the silhouette instead of smoothly flattening it.
+
+**Where the colour comes from.** Not a black-body curve. Thorne specified a disk that has stopped accreting and cooled to one temperature everywhere, so its colour cannot vary with radius — and sampling the film's own published render bears that out. Inverting this renderer's tone curve on Figure 15a of the DNEG paper gives the linear emission behind each pixel, and from the faintest outer wisp to the core it comes back at a near-constant `(1.00, 0.48, 0.40)`. The white-hot centre and the salmon fringe are the same colour at two intensities; the walk to white is the tone curve and the veiling flare doing their jobs. Ramping hue with radius — which is the obvious thing to do, and what this used to do — is what makes a render of Gargantua come out khaki instead of rose.
+
+**Why the outer disk is a volume.** DNGR shipped three disk models, and the obvious one — a single intersection with an infinitely thin plane — has a tell you cannot texture your way out of: a plane's silhouette is exactly a plane, so the disk's edge comes out glassy no matter how good the map on it. The film's outer material is torn into filaments that stand off the mid-plane with dark lanes between them, and that came from their second model, a *volumetric* disk an artist built in Houdini as ~17 million voxels of optical density, integrated step by step along the beam. For close-ups they went further still and drove procedural fractal noise through Mantra.
+
+So the outer disk here is a real volume: a slab of fbm density the marcher integrates, emissive and absorbing both, because the dark lanes are filaments standing in front of brighter ones and that only happens if the material occludes. Two things were measured off the film rather than guessed. Its half-thickness is roughly 1 r_s at mid-disk falling to a knife edge at the rim — so `h/r` *falls* with radius, where a constant flare angle would make it rise and the fringe billow into smoke. And only 56–65% of the vertical span reads as material; the rest is gap. The noise also has to be kept coarse: a ray grazing the disk tip runs several r_s through the slab, and finer features get averaged away by their own line integral, leaving a solid wall where the film has holes.
+
+**Where the camera goes.** DNEG shot Gargantua from `r_c = 74.1M` and `θ_c = 86.56°` — 3.4° above the disk plane. That grazing angle is not incidental: it is what folds the disk's over-and-under images into a closed halo around the shadow. Lift the camera much past ten degrees and the arcs peel apart into an ordinary ringed planet, which is why every framing here sits near the plane. The fields of view are long for the same reason. On the film's own plates the shadow spans about an eighth of the frame width; at a sixteenth the halo, the photon ring and the ragged rim all shrink below the size at which anyone can read them, and the image stops being Gargantua and starts being a bright speck.
+
+**Veiling flare.** A wide, soft, near-neutral glow, run as a second blur chain at an eighth resolution so it can reach a couple of hundred pixels. DNEG convolved their renders with the measured point spread function of the actual IMAX lenses for this, so the CG would cut against photographed footage. It is the most "shot on film" thing about the image and a tight threshold bloom is no substitute — but it is kept well below the strength of their own flared plate, which fills the shadow to a pale grey. In the film the shadow reads black.
 
 ---
 
@@ -97,7 +108,7 @@ Auto therefore picks **built-in** by default and **headphones** when it sees a w
 | Area | Technology |
 | --- | --- |
 | Rendering | WebGL via [three.js r185](https://threejs.org/) (vendored, tree-shaken) |
-| Shading | GLSL — geodesic raymarch, bloom, ACES tonemap |
+| Shading | GLSL — geodesic raymarch, volumetric disk fringe, bloom and veiling flare, ACES tonemap |
 | Audio | [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) — oscillators, biquads, convolution reverb, waveshaping |
 | Build | ~60 lines of Node. No framework. |
 | Deployment | Deployed to [Cloudflare Workers](https://workers.cloudflare.com/) as static assets, at [kerr.cloakyard.com](https://kerr.cloakyard.com/) |
@@ -146,7 +157,7 @@ There is no server to talk to, no analytics, no cookies and no accounts. Because
 
 ## ⚙️ Performance
 
-The whole application is one 609 KB document — **134 KB over the wire** after brotli — served in a single request with no dependency waterfall.
+The whole application is one 630 KB document — **141 KB over the wire** after brotli — served in a single request with no dependency waterfall.
 
 The renderer measures its own frame rate and trades resolution scale against march step count to hold 60 fps, between `0.5×/96` steps and `0.92×/220`. On an M2 Max it sits at the ceiling. `prefers-reduced-motion` damps camera shake, chromatic aberration and flash.
 
