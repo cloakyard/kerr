@@ -1,15 +1,28 @@
 # Cloudflare static-asset headers.
-# The page is fully self-contained after the build, so the policy can name no
-# external origin at all. blob: is required for "own track" — a dropped file
-# becomes an object URL and is fed to an <audio> element.
+# The document is fully self-contained after the build, so the policy can name
+# no external origin at all. Four concessions, all same-origin or better:
+#   blob:          "own track" — a dropped file becomes an object URL
+#   manifest-src   the install manifest, which default-src 'none' would block
+#   worker-src     the service worker script, likewise
+#   img-src 'self' the install icons
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Cross-Origin-Opener-Policy: same-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+# The service worker runs in its own context with its own policy, taken from
+# the headers on this response. It needs connect-src 'self' to reach the
+# network at all — the document's connect-src 'none' would leave it able to
+# serve only from cache, which is precisely backwards for a network-first
+# worker. Nothing about this loosens the document's own policy.
+/sw.js
+  Content-Security-Policy: default-src 'none'; script-src 'self'; connect-src 'self'
+  Cache-Control: public, max-age=0, must-revalidate
+  Service-Worker-Allowed: /
 
 # The document carries the whole app, so it must revalidate every load.
 /index.html
@@ -18,7 +31,21 @@
 /
   Cache-Control: public, max-age=0, must-revalidate
 
+# The manifest changes about as often as the app's name does, but a stale one
+# strands an installed icon, so keep it short.
+/manifest.webmanifest
+  Cache-Control: public, max-age=3600
+
 /favicon.svg
+  Cache-Control: public, max-age=604800
+
+/icon.svg
+  Cache-Control: public, max-age=604800
+
+/icon-maskable.svg
+  Cache-Control: public, max-age=604800
+
+/icons/*
   Cache-Control: public, max-age=604800
 
 # Social scrapers cache the card hard anyway; this only affects re-fetches.

@@ -1,0 +1,276 @@
+:root{
+  --void:#05060a;
+  --hull:#0b0e16;
+  --ember:#ffb257;
+  --flare:#fff2d6;
+  --ion:#7fb4ff;
+  --dim:#5d6577;
+  --line:rgba(255,255,255,.14);
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --disp: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--void);overflow:hidden}
+body{
+  font-family:var(--mono);
+  color:#e8eaf0;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  touch-action:none;
+}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+
+/* cinematic letterbox */
+.bar{position:fixed;left:0;right:0;height:5.2vh;background:#000;z-index:40;pointer-events:none;
+     transition:height .9s cubic-bezier(.2,.7,.2,1)}
+.bar.t{top:0}.bar.b{bottom:0}
+body.boot .bar{height:50vh}
+
+/* ---------- BOOT / TITLE ---------- */
+#boot{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:0;
+      background:radial-gradient(120% 90% at 50% 50%,rgba(10,12,20,.35),#05060a 78%);
+      transition:opacity .9s ease, visibility .9s}
+#boot.gone{opacity:0;visibility:hidden;pointer-events:none}
+.eyebrow{font-size:10px;letter-spacing:.42em;color:var(--dim);text-transform:uppercase}
+h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
+   letter-spacing:.34em;text-indent:.34em;line-height:1;margin:18px 0 10px;
+   color:#fff;text-shadow:0 0 60px rgba(255,178,87,.28), 0 0 140px rgba(127,180,255,.12)}
+/* centred and balanced: on a narrow screen this wraps, and left-aligned text
+   in a centred column left "HOLE" stranded on its own line */
+.sub{font-size:11px;letter-spacing:.3em;color:var(--ember);text-transform:uppercase;opacity:.85;
+     text-align:center;text-wrap:balance}
+.specs{display:flex;gap:22px;margin-top:34px;flex-wrap:wrap;justify-content:center;padding:0 20px}
+.spec{text-align:center;min-width:74px}
+.spec b{display:block;font-weight:400;font-size:13px;color:#dfe3ec;letter-spacing:.08em}
+.spec span{display:block;font-size:9px;letter-spacing:.24em;color:var(--dim);margin-top:5px;text-transform:uppercase}
+#go{margin-top:42px;background:none;border:1px solid var(--line);color:#fff;
+    font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+    padding:16px 40px;cursor:pointer;position:relative;overflow:hidden;
+    transition:border-color .4s, letter-spacing .4s, color .4s}
+#go:hover,#go:focus-visible{border-color:var(--ember);color:var(--ember);letter-spacing:.42em;outline:none}
+#go:focus-visible{box-shadow:0 0 0 1px var(--ember)}
+.pick{margin-top:36px;text-align:center}
+.picklabel{display:block;font-size:9px;letter-spacing:.28em;color:var(--dim);
+  text-transform:uppercase;margin-bottom:10px}
+/* Even columns. The four labels differ in length, and ragged segments in a
+   control this small read as broken rather than as emphasis. minmax(0,1fr)
+   so the longest label shrinks its own cell instead of stretching the row. */
+.seg2{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  border:1px solid var(--line);max-width:456px;margin:0 auto}
+.seg2 button{background:none;border:0;border-left:1px solid var(--line);
+  color:var(--dim);font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase;padding:11px 4px;cursor:pointer;
+  transition:color .25s,background .25s;white-space:nowrap}
+.seg2 button:first-child{border-left:0}
+.seg2 button.on{color:#05060a;background:var(--ember)}
+.seg2 button:focus-visible{outline:1px solid var(--ember);outline-offset:-2px}
+/* Says what you are about to hear — and, on Auto, what was guessed and why.
+   Reserved height so resolving the guess does not shift the button row. */
+.pickwhy{display:block;margin-top:11px;font-size:9px;letter-spacing:.14em;
+  color:var(--dim);text-transform:uppercase;min-height:28px;line-height:1.5;
+  padding:0 12px;text-wrap:balance}
+.pickwhy b{color:var(--ember);font-weight:400}
+.note{margin-top:24px;font-size:9.5px;letter-spacing:.16em;color:var(--dim);text-align:center;padding:0 24px}
+.note a{color:var(--dim);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+/* ---------- HUD ---------- */
+/* visibility, not just opacity: an opacity-0 element is still in the tab
+   order, so Tab on the boot screen used to land on invisible transport
+   controls before ever reaching "Enter the well". */
+#hud{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;visibility:hidden;
+     transition:opacity 1.2s ease .3s, visibility 1.2s ease .3s}
+#hud.on{opacity:1;visibility:visible}
+
+/* Scrims. The disk goes very near white, and unbacked text over it was
+   unreadable — these give every control a guaranteed dark backdrop. */
+#hud::before,#hud::after{content:'';position:absolute;left:0;right:0;pointer-events:none;z-index:-1}
+#hud::before{top:0;height:170px;background:linear-gradient(to bottom,rgba(3,4,8,.80),rgba(3,4,8,.34) 55%,transparent)}
+#hud::after{bottom:0;height:230px;background:linear-gradient(to top,rgba(3,4,8,.88),rgba(3,4,8,.42) 55%,transparent)}
+
+/* Idle only dims the read-only telemetry. Transport controls keep a legible
+   floor — they are the one thing you may need at any moment. */
+/* Telemetry goes to zero rather than 12% — a faint grey readout sitting on
+   top of a bright disk reads as smudge, not information. */
+#hud.idle .fade{opacity:0}
+#hud.idle .soft{opacity:.68}
+.fade,.soft{transition:opacity .8s ease}
+
+.tl{position:absolute;top:calc(5.2vh + 22px);left:26px;font-size:9.5px;letter-spacing:.24em;
+    color:#8b93a6;display:grid;gap:5px;line-height:1.4}
+.tl b{color:#e6eaf3;font-weight:400}
+.tl .row{display:flex;gap:8px}
+.tl .k{min-width:52px}
+.tr{position:absolute;top:calc(5.2vh + 18px);right:26px;display:flex;gap:8px;
+    align-items:stretch;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+.btn{background:rgba(4,6,11,.72);border:1px solid rgba(255,255,255,.30);color:#d3d9e6;
+     -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);font-family:var(--mono);
+     font-size:9px;letter-spacing:.2em;padding:8px 12px;cursor:pointer;text-transform:uppercase;
+     transition:color .25s,border-color .25s,background .25s;white-space:nowrap}
+.btn:hover,.btn:focus-visible{color:var(--ember);border-color:var(--ember);
+     background:rgba(4,6,11,.88);outline:none}
+.btn:focus-visible{box-shadow:0 0 0 2px rgba(255,178,87,.45)}
+.btn.on{color:var(--ion);border-color:var(--ion)}
+/* this label changes with the mode (AUTO / BUILT-IN / SPEAKERS / PHONES);
+   a floor on the width stops the whole control row reflowing as it cycles */
+#bVoice{min-width:86px}
+
+.vol{display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.30);
+     background:rgba(4,6,11,.72);-webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
+     padding:0 12px}
+.vol span{font-size:9px;letter-spacing:.2em;color:#aab2c4}
+.vol input{-webkit-appearance:none;appearance:none;width:72px;height:20px;background:none;cursor:pointer}
+.vol input::-webkit-slider-runnable-track{height:1px;background:var(--line2)}
+.vol input::-moz-range-track{height:1px;background:var(--line2)}
+.vol input::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;background:var(--ember);
+     border-radius:50%;margin-top:-4px;box-shadow:0 0 8px rgba(255,178,87,.6)}
+.vol input::-moz-range-thumb{width:9px;height:9px;border:0;background:var(--ember);border-radius:50%}
+.vol input:focus-visible{outline:1px solid var(--ember);outline-offset:3px}
+
+#help{position:fixed;inset:0;z-index:70;background:rgba(3,4,8,.88);
+      display:flex;align-items:center;justify-content:center;padding:24px;
+      opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+#help.on{opacity:1;visibility:visible}
+#help .panel{max-width:460px;width:100%;border:1px solid var(--line);background:var(--pane);padding:30px 32px}
+#help h2{font-family:var(--disp);font-weight:200;font-size:19px;letter-spacing:.3em;
+         margin-bottom:22px;color:#fff}
+#help dl{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;font-size:10.5px;letter-spacing:.1em}
+#help dt{color:var(--ember);white-space:nowrap}
+#help dd{color:var(--dim)}
+
+#toast{position:fixed;left:50%;bottom:calc(5.2vh + 150px);z-index:55;
+  transform:translateX(-50%) translateY(8px);font-size:9.5px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--flare);border:1px solid var(--line);
+  background:var(--pane);padding:10px 18px;opacity:0;pointer-events:none;
+  transition:opacity .3s,transform .3s}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+#dz{position:fixed;inset:14px;z-index:80;display:flex;align-items:center;justify-content:center;
+  background:rgba(5,6,10,.92);border:1px dashed var(--ember);font-size:11px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--ember);opacity:0;visibility:hidden;transition:.2s}
+#dz.on{opacity:1;visibility:visible}
+
+/* arrangement map = the signature readout */
+.deck{position:absolute;left:26px;right:26px;bottom:calc(5.2vh + 20px);pointer-events:auto}
+.meta{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+.sect{font-size:11px;letter-spacing:.36em;color:var(--ember);text-transform:uppercase;
+      text-shadow:0 1px 10px rgba(0,0,0,.9)}
+.clock{font-size:11px;letter-spacing:.16em;color:#aab2c4;text-shadow:0 1px 10px rgba(0,0,0,.9)}
+.clock b{color:#f0f3f9;font-weight:400}
+#map{position:relative;display:flex;gap:2px;height:28px;cursor:pointer;
+     align-items:stretch;touch-action:none}
+#map:focus-visible{outline:1px solid var(--ember);outline-offset:6px}
+/* left:50% is the resting position — without it the box sits at the static
+   origin and, with translateX(-50%), hangs off the left edge */
+#scrub{position:absolute;top:-21px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.14em;
+     color:var(--flare);background:var(--pane);border:1px solid var(--line);padding:3px 7px;
+     opacity:0;transition:opacity .18s;pointer-events:none;white-space:nowrap;z-index:2}
+#map:hover #scrub{opacity:1}
+.seg{position:relative;border-top:1px solid rgba(255,255,255,.34);
+     background:linear-gradient(to top,rgba(4,6,11,.55),rgba(4,6,11,.16));
+     transition:background .4s, border-color .4s;overflow:hidden}
+.seg::after{content:attr(data-l);position:absolute;left:4px;top:5px;font-size:7.5px;
+     letter-spacing:.14em;color:#9aa2b5;white-space:nowrap;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.seg.hot{border-top-color:var(--ember);
+     background:linear-gradient(to top,rgba(255,178,87,.26),rgba(4,6,11,.3))}
+.seg.hot::after{color:var(--flare)}
+.seg.past{border-top-color:rgba(255,255,255,.55)}
+#map:hover .seg{border-top-color:rgba(255,255,255,.55)}
+#play{position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--flare);
+      box-shadow:0 0 12px var(--ember);pointer-events:none}
+#spec{position:absolute;left:26px;right:26px;bottom:calc(5.2vh + 80px);height:38px;
+      width:calc(100% - 52px);opacity:.5}
+.hint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(5.2vh + 128px);
+      font-size:9px;letter-spacing:.26em;color:var(--dim);text-transform:uppercase;
+      transition:opacity .8s}
+.hint.gone{opacity:0}
+/* Section title card.
+   The old version used mix-blend-mode:screen, which is invisible against the
+   disk — screen(white, white) is white. It also fired for three sections out
+   of ten, so nothing appeared when the music started. */
+#drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      opacity:0;pointer-events:none;will-change:opacity}
+/* An ellipse behind the text rather than a full-width band — a band darkens
+   the disk's wings in a visible horizontal stripe. */
+#drop::before{content:'';position:absolute;left:50%;top:50%;
+      width:min(1150px,94vw);height:360px;transform:translate(-50%,-50%);
+      background:radial-gradient(ellipse at center,
+                 rgba(3,4,8,.82),rgba(3,4,8,.52) 46%,transparent 72%)}
+#drop .card{position:relative;text-align:center;padding:0 24px}
+#dropIdx{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.5em;
+      text-indent:.5em;color:var(--ember);margin-bottom:20px;
+      text-shadow:0 1px 14px rgba(0,0,0,.95)}
+#dropName{display:block;font-family:var(--disp);font-weight:200;
+      font-size:clamp(26px,6.2vw,78px);line-height:1;color:#fff;white-space:nowrap;
+      text-shadow:0 2px 44px rgba(0,0,0,.95), 0 0 100px rgba(0,0,0,.85),
+                  0 0 26px rgba(255,178,87,.28)}
+#dropRule{display:block;width:0;height:1px;margin:24px auto 0;background:var(--ember);
+      box-shadow:0 0 16px rgba(255,178,87,.85)}
+
+@media (max-width:640px){
+  .tl{display:none}
+  /* controls stay reachable on phones — they used to be hidden entirely,
+     which left no way to pause or change output. left+right gives the row a
+     real width so it wraps instead of running off the edge. */
+  /* six controls in ~347px: at 6px gaps and 8px padding the row came to
+     356px and wrapped, stranding the "?" alone on a second line. Trimming
+     the gap and the side padding buys 21px, which fits it on one row.
+     Under a coarse pointer the 44px touch rules below win and it wraps
+     anyway — a finger-sized target is worth more than a tidy row. */
+  .tr{top:calc(5.2vh + 12px);left:14px;right:14px;gap:5px;row-gap:6px}
+  .btn{font-size:8px;padding:9px 7px;letter-spacing:.12em}
+  #bVoice{min-width:62px}
+  .vol{padding:0 9px}
+  .vol input{width:56px}
+  /* the "VOL" caption does not fit, so the track has to carry the meaning —
+     at 1px and 30% white it just looked like a stray dot in a box */
+  .vol span{display:none}
+  .vol input::-webkit-slider-runnable-track{height:2px;background:rgba(255,255,255,.5)}
+  .vol input::-moz-range-track{height:2px;background:rgba(255,255,255,.5)}
+  .vol input::-webkit-slider-thumb{margin-top:-4px}
+  .deck{left:16px;right:16px}
+  #spec{left:16px;right:16px;width:calc(100% - 32px);height:26px}
+  .seg::after{display:none}
+  .hint{font-size:8px;width:100%;text-align:center;padding:0 16px}
+  #help .panel{padding:22px 20px}
+  #help dl{grid-template-columns:1fr;gap:3px 0}
+  #help dd{margin-bottom:9px}
+  /* boot screen: the tagline ran edge-to-edge with no gutter, and four spec
+     items wrapped 3 + 1. Cap the width so they land as a tidy 2 x 2. */
+  h1{letter-spacing:.26em;text-indent:.26em}
+  .sub{font-size:9.5px;letter-spacing:.2em;padding:0 22px;line-height:1.8}
+  .eyebrow{font-size:9px;letter-spacing:.3em;padding:0 20px;text-align:center}
+  .specs{gap:16px 24px;max-width:230px;margin-left:auto;margin-right:auto;margin-top:28px}
+  .pick{margin-top:28px}
+  /* Four segments across a phone leaves "Headphones" ~76px of cell; it fits
+     but only just, and any larger text setting breaks it. Two rows of two
+     keeps the cells even and the labels whole. */
+  .seg2{grid-template-columns:repeat(2,minmax(0,1fr));max-width:300px}
+  .seg2 button{font-size:9px;letter-spacing:.12em}
+  .seg2 button:nth-child(3){border-left:0}
+  .seg2 button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .pickwhy{min-height:34px;padding:0}
+  #go{padding:16px 30px;letter-spacing:.28em}
+  /* "EVENT HORIZON" is 13 characters — at full tracking it runs off a phone */
+  #dropName{font-size:clamp(19px,5.6vw,30px)}
+  #drop::before{height:230px}
+  #dropIdx{margin-bottom:14px;font-size:8.5px}
+  #dropRule{margin-top:16px}
+}
+/* Touch targets. 29px is fine under a mouse but well short of the 44px
+   WCAG 2.5.5 recommends for a finger — key off the pointer, not the
+   viewport, so a touchscreen laptop and a tablet both get it. */
+@media (pointer: coarse){
+  .btn{min-height:44px;padding:12px 14px}
+  .btn.icon{min-width:44px}
+  .vol{min-height:44px}
+  .vol input{height:44px}
+  .seg2 button{min-height:46px}
+  #map{height:38px}
+  /* no hover on touch, so the scrub readout must show while dragging */
+  #map:active #scrub{opacity:1}
+}
+@media (prefers-reduced-motion: reduce){
+  .bar,#boot,#hud,.fade,.soft{transition-duration:.01ms}
+  #drop{transition:none}
+}

@@ -1,0 +1,28 @@
+{
+  "name": "KERR — Singularity Visualizer",
+  "short_name": "KERR",
+  "description": "A relativistic black hole rendered by geodesic raymarching, scored by a cinematic piece generated live in your browser. Nothing is downloaded.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05060a",
+  "theme_color": "#05060a",
+  "categories": ["entertainment", "music", "education"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/og.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Gargantua seen almost edge-on, its accretion disk lensed into a halo over and under the shadow"
+    }
+  ]
+}

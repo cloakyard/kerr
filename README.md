@@ -11,7 +11,7 @@
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="MIT License" /></a>
     <img src="https://img.shields.io/badge/platform-Web-blue" alt="Platform: Web" />
     <img src="https://img.shields.io/badge/dependencies-1-brightgreen" alt="One dependency" />
-    <img src="https://img.shields.io/badge/payload-141%20KB%20br-brightgreen" alt="141 KB brotli" />
+    <img src="https://img.shields.io/badge/payload-134%20KB%20br-brightgreen" alt="134 KB brotli" />
   </p>
 
 </div>
@@ -31,6 +31,7 @@ A single page that draws a spinning black hole the way light actually arrives at
 - **🎼 A live score** — pipe organ, string ensemble, choir formants, a bell arpeggio, timpani and a clock tick, sequenced through ten sections in D minor by a Web Audio graph built from oscillators and filters.
 - **🎚️ Three output voicings, picked for you** — the same performance re-mixed for built-in speakers, powered monitors, or headphones, chosen automatically and overridable in one tap. This is a real signal-path change, not a preset name.
 - **🎧 Bring your own audio** — drop any file on the page and the visualiser drives itself from an FFT and onset detector instead.
+- **📲 Installable, and it works on a plane** — a real PWA: install it and the whole thing runs offline, because "the whole thing" is one document with no runtime assets to miss.
 
 ---
 
@@ -110,14 +111,48 @@ Auto therefore picks **built-in** by default and **headphones** when it sees a w
 | Rendering | WebGL via [three.js r185](https://threejs.org/) (vendored, tree-shaken) |
 | Shading | GLSL — geodesic raymarch, volumetric disk fringe, bloom and veiling flare, ACES tonemap |
 | Audio | [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) — oscillators, biquads, convolution reverb, waveshaping |
-| Build | ~60 lines of Node. No framework. |
+| Build | esbuild, driven by ~100 lines of Node. No framework. |
 | Deployment | Deployed to [Cloudflare Workers](https://workers.cloudflare.com/) as static assets, at [kerr.cloakyard.com](https://kerr.cloakyard.com/) |
 
-**Why no framework.** One canvas, no routes, no components, no data fetching, and nothing in the DOM but a HUD. React and a bundler would add a build graph and a runtime to a page that renders roughly forty elements. The build step exists only to fold three.js into the document — which is also what lets the CSP name no external origin at all.
+**Why no framework.** One canvas, no routes, no components, no data fetching, and nothing in the DOM but a HUD. React would add a runtime and a reconciler to a page whose HUD is already redrawn imperatively sixty times a second — the one shape its model is worst at. Astro solves routing and content, and there is neither. What the project actually needed was module boundaries and a build step, and neither of those requires a framework.
 
 **The one dependency.** three.js is used for about twenty symbols: the renderer, render targets, two cameras, `Points`, and some vectors. Everything else is hand-written GLSL. [`src/three-entry.js`](src/three-entry.js) imports exactly those by name and `npm run vendor:three` tree-shakes them into `vendor/three.bundle.js`. Since three ships ESM only, the vendored artefact is a bundle rather than a copied file — and because it is committed, building and deploying needs no toolchain at all; esbuild runs only when the dependency is bumped.
 
 Colour management is switched off and the renderer left in linear: every shader here already ends in an ACES tonemap and a gamma encode, so letting three convert as well would apply the transform twice.
+
+---
+
+## 🗂️ How the source is organised
+
+The source is a module tree. The artefact is one self-contained HTML file. Those are separate decisions and both are on purpose — one document is what makes the CSP enforceable and the page runnable from disk forever; modules are what make it possible to work on.
+
+```
+src/
+  main.js              the composition root, and the frame loop
+  audio/
+    arrangement.js     the score as data — sections, chords, arpeggio, lead
+    engine.js          Web Audio graph, sequencer, analyser
+  render/
+    shaders/           bh.frag · final.frag · bright.frag · blur.frag · …
+    gl.js              context, colour management, float-target detection
+    scene.js           every render target and material; the pass chain
+    kerr.js            horizon and ISCO, as pure functions
+    bh.js              the live state, pushed at the GPU
+    quality.js         the adaptive resolution/step policy
+    particles.js       the orbiting field
+  direct/
+    camera.js          section presets, easing, the shot
+    events.js          audio events → shockwave, shake, flash, pull
+    hud.js             map, telemetry, spectrum, title cards
+    output.js          the Auto voicing heuristic, as a pure function
+    input.js · shortcuts.js · voicing.js · dropzone.js
+```
+
+**Three layers, and the arrows point one way.** `audio/` imports nothing — no DOM, no renderer, no camera. `render/` imports nothing above it. `direct/` composes both, and only `main.js` knows about all three. That was already true when the whole thing was one file, held together by discipline; `npm run check` and [`test/structure.test.js`](test/structure.test.js) now enforce it, so a future import that points the wrong way fails before it ships.
+
+**The shaders are real files.** `bh.frag` is 375 lines of GLSL that used to live inside a JavaScript template literal, where a stray backtick in a comment would silently truncate the string and kill the page at load, and where no editor could see any of it. They highlight now, and `#include "noise.glsl"` is a real directive resolved at build time rather than a `${}` interpolation. The only honest way to check GLSL is to compile it, so that is what the browser test does.
+
+**The arithmetic is separated from the machinery on purpose.** `kerr.js` and `output.js` hold no state and import nothing, which is what makes it possible to check the ISCO against Bardeen, Press & Teukolsky in a unit test instead of against a screenshot.
 
 ---
 
@@ -130,34 +165,65 @@ npm install
 npm run dev     # http://localhost:8080
 ```
 
-There is no build step in development — `src/index.html` runs straight from disk. Edit it, reload, done.
+`npm run dev` rebuilds on every change and serves the result. A rebuild is about 50 ms, so it feels like editing and reloading — the difference is that development and production run the same builder, and what you are looking at is what ships.
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Static dev server on `:8080` |
-| `npm run build` | Inline three.js into `dist/index.html` |
-| `npm run preview` | Build, then serve `dist/` |
-| `npm run check` | Parse the inline script, verify the pinned dependency, check for external origins |
-| `npm run deploy` | Build and publish to Cloudflare |
+| `npm run dev` | Rebuild on change, serve on `:8080` |
+| `npm run build` | Bundle and inline everything into `dist/index.html` |
+| `npm run preview` | Production build, then serve `dist/` |
+| `npm run check` | Six static gates — see below |
+| `npm test` | 93 tests, including a real browser |
+| `npm run deploy` | Check, test, build, publish to Cloudflare |
+| `npm run icons` | Re-rasterise the install icons from their SVG sources |
 | `npm run vendor:three` | Re-bundle three.js — only needed when bumping it |
 
 Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste the new hash into `THREE_SHA256` in [`scripts/check.mjs`](scripts/check.mjs) and re-run `npm run check`.
 
-`npm run check` is worth running before you push. The GLSL lives in template literals, so a stray backtick in a shader comment silently terminates the string and the page dies at load with nothing useful in the console — the check catches exactly that.
+### What gets checked
+
+`npm run check` is the fast gate: the module tree bundles and every `#include` resolves; the vendored three.js matches its pinned hash; every `THREE.*` symbol used is one the vendor entry exports; the built page loads nothing from another origin; the layering holds; and every shader resolves to a whole program.
+
+`npm test` is the real one, and it needs no dependencies at all — [`node:test`](https://nodejs.org/api/test.html) plus a ~200-line DevTools Protocol client that drives whatever Chrome is already on the machine. It covers:
+
+| | |
+| --- | --- |
+| **Arrangement** | the piece is 120 bars and exactly four minutes; sections are contiguous; every section type is one the camera knows |
+| **Kerr geometry** | horizon and ISCO checked against published values — 6M at `a = 0`, 4.2330M at `a = 0.5`, 2.3209M at `a = 0.9` |
+| **Adaptive quality** | never leaves its band under 20,000 random frame rates; settles at both ends; survives `NaN` |
+| **Auto voicing** | the iPadOS-presents-as-a-Mac case, and that powered speakers are never guessed |
+| **GLSL includes** | diamond and circular includes resolve once, not twice — a duplicate is a redeclaration error |
+| **The artefact** | script tags balanced, nothing external, shaders present, payload inside budget, README quoting the size the build actually makes |
+| **Structure** | no import cycles, no orphan modules, no dead exports, layering intact |
+| **The real page** | boots in headless Chrome under the production headers; asserts zero console errors, then reads pixels out of the WebGL buffer to check the frame is neither black nor the wrong colour |
+| **The PWA** | the worker registers, controls the page, reaches the network, and serves the app with the network cut — while the document itself is still refused a `fetch()` |
+
+The browser tests skip cleanly, with a note, if no Chrome is found.
 
 ---
 
 ## 🛡️ Privacy
 
-There is no server to talk to, no analytics, no cookies and no accounts. Because the build inlines everything, the shipped [`_headers`](public/_headers) can forbid every external origin outright — `default-src 'none'`, and `connect-src 'none'`, which means the page cannot make a network request at all once it has loaded. That is enforced by the browser, not merely promised.
+There is no server to talk to, no analytics, no cookies and no accounts. Because the build inlines everything, the page can forbid every external origin outright — `default-src 'none'`, and **`connect-src 'none'`, which means it cannot make a network request at all once it has loaded.** That is enforced by the browser, not merely promised.
 
-`media-src blob:` is the single concession: a dropped audio file becomes an object URL. It is decoded locally and never leaves the device.
+The concessions are all same-origin or narrower: `media-src blob:` so a dropped audio file can become an object URL (decoded locally, never leaves the device), `img-src 'self'` for the install icons, and `manifest-src`/`worker-src 'self'` for the two files the PWA needs.
+
+<details>
+<summary>Why the document's policy is in a meta tag and not only in <code>_headers</code></summary>
+
+Cloudflare **appends** when two `_headers` rules set the same header name, and a browser enforces the *intersection* of every policy it is handed. So a blanket `connect-src 'none'` on `/*` also lands on `/sw.js` — and a service worker under `connect-src 'none'` cannot reach the network at all. That was measured rather than assumed: the worker registered, took control, and then answered every request with a 503, which would have broken the second visit for everyone who came back.
+
+So [`_headers`](public/_headers) grants `connect-src 'self'`, which is what the worker needs, and a `<meta http-equiv="Content-Security-Policy">` in the document intersects it straight back down to `'none'` for the page itself. The meta tag reaches this document and nothing else. `frame-ancestors` stays in the header, where it is the only place it works.
+
+The guarantee is unchanged and still browser-enforced. [`test/pwa.test.js`](test/pwa.test.js) holds down both ends of it — including an assertion that a `fetch()` from the page is still refused.
+
+</details>
 
 ---
 
 ## ⚙️ Performance
 
-The whole application is one 630 KB document — **141 KB over the wire** after brotli — served in a single request with no dependency waterfall.
+The whole application is one 599 KB document — **134 KB over the wire** after brotli — served in a single request with no dependency waterfall.
 
 The renderer measures its own frame rate and trades resolution scale against march step count to hold 60 fps, between `0.5×/96` steps and `0.92×/220`. On an M2 Max it sits at the ceiling. `prefers-reduced-motion` damps camera shake, chromatic aberration and flash.
 

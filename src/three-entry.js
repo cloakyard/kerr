@@ -7,8 +7,10 @@
  * tree-shaking and drags in loaders, curves, animation, audio and every
  * material the page never touches.
  *
- * Keep this list in sync with the symbols the page actually references:
- *   grep -o "THREE\.[A-Za-z0-9_]*" src/index.html | sort -u
+ * Keep this list in sync with the symbols the app actually references:
+ *   grep -rho "THREE\.[A-Za-z0-9_]*" src --include=*.js | sort -u
+ *
+ * `npm run check` and test/structure.test.js both fail if it drifts.
  */
 import {
   AdditiveBlending,

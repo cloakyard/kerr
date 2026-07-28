@@ -114,7 +114,11 @@ blob-report/
 .fseventsd
 .DocumentRevisions-V100
 .apdisk
-Icon?
+# The Finder custom-icon file is literally "Icon" plus a carriage return.
+# Written as `Icon?` the ? is a glob wildcard, and it quietly swallowed
+# public/icons/ — every PWA icon was being left out of commits. The bracket
+# form matches the CR and nothing else.
+Icon[$'\r']
 
 # Written by macOS onto external / network volumes
 .AppleDB
