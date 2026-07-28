@@ -10,7 +10,7 @@
     "preview": "npm run build && node scripts/serve.mjs",
     "deploy": "npm run check && npm test && npm run build && wrangler deploy",
     "check": "node scripts/check.mjs",
-    "test": "node --test --test-timeout=60000 \"test/*.test.js\"",
+    "test": "node --test --test-concurrency=1 --test-timeout=90000 \"test/*.test.js\"",
     "icons": "node scripts/icons.mjs",
     "vendor:three": "esbuild src/three-entry.js --bundle --minify --format=iife --target=es2020 --legal-comments=inline --outfile=vendor/three.bundle.js"
   },

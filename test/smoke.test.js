@@ -186,10 +186,18 @@ test('telemetry reports live simulation state, not the static markup', { skip: s
 });
 
 test('the clock advances and the section label tracks the arrangement', { skip: skip() }, async () => {
+  /* Poll rather than sleep once. The readout has one-second resolution and
+     the AudioContext takes a moment to actually start in headless, so a fixed
+     wait is a race — and a flaky test is worse than no test. */
   const first = await page.eval(`document.getElementById('t1').textContent`);
-  await new Promise((r) => setTimeout(r, 1600));
-  const second = await page.eval(`document.getElementById('t1').textContent`);
-  assert.notEqual(first, second, 'the transport clock is frozen');
+  const until = Date.now() + 15000;
+  let second = first;
+  while (second === first && Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 250));
+    second = await page.eval(`document.getElementById('t1').textContent`);
+  }
+  assert.notEqual(second, first, 'the transport clock never advanced in 15s');
+
   const label = await page.eval(`document.getElementById('sect').textContent`);
   assert.match(label, /^[A-Z]/, `section label looks wrong: ${label}`);
 });

@@ -17,8 +17,13 @@
 const VERSION = 'kerr-v1';
 
 /* Warmed at install so the very first offline load works even if the visitor
-   never came back. Everything else is cached as it is fetched. */
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg'];
+   never came back. Everything else is cached as it is fetched.
+
+   `/` and not `/index.html`: Cloudflare's asset runtime 307s /index.html to
+   the canonical /, and a redirected response cannot be written to the Cache
+   API at all — that entry would fail every time. / is what the browser
+   actually navigates to anyway. */
+const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -62,7 +67,7 @@ self.addEventListener('fetch', (e) => {
         if (hit) return hit;
         // A navigation to any path should still land on the app
         if (req.mode === 'navigate') {
-          const shell = await caches.match('/index.html');
+          const shell = (await caches.match('/')) || (await caches.match('/index.html'));
           if (shell) return shell;
         }
         return new Response('offline', { status: 503, statusText: 'offline' });

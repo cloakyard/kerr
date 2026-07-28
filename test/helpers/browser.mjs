@@ -137,7 +137,18 @@ export async function serve(root, headerRules = []) {
     }
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  return { server, origin: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((r) => server.close(r)) };
+  return {
+    server,
+    origin: `http://127.0.0.1:${server.address().port}`,
+    /* closeAllConnections() before close(): http.Server.close() waits for every
+       open connection to end, and a browser holds keep-alive sockets. Without
+       this the teardown hook blocks forever and takes the whole runner with
+       it — silently, because a hung after() produces no output at all. */
+    close: () => {
+      server.closeAllConnections?.();
+      return new Promise((r) => server.close(r));
+    },
+  };
 }
 
 /* ---- the protocol ------------------------------------------------------ */
@@ -248,7 +259,10 @@ export async function launch(chromePath) {
       } catch { return null; }
     }, { timeout: 20000, what: 'Chrome to report its debugging port' });
 
-    const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
+    // fetch has no default timeout; a Chrome that opened the port but never
+    // answers would hang here indefinitely
+    const version = await (await fetch(`http://127.0.0.1:${port}/json/version`,
+      { signal: AbortSignal.timeout(15000) })).json();
     const ws = new WebSocket(version.webSocketDebuggerUrl);
     const sessions = new Map();
     const browser = new Session(ws, null);
@@ -292,13 +306,28 @@ export async function launch(chromePath) {
   }
 }
 
-export async function goto(page, url) {
-  const loaded = new Promise((resolve) => {
+/**
+ * Navigate and wait for the load event.
+ *
+ * The timeout is not paranoia. A navigation that is cancelled, or one a
+ * service worker answers in a way that never produces a load event, leaves
+ * this waiting forever — and a hung await inside a test hook takes the whole
+ * runner down with no output at all, which is a great deal harder to diagnose
+ * than a failed assertion.
+ */
+export async function goto(page, url, { timeout = 30000 } = {}) {
+  let done;
+  const loaded = new Promise((resolve, reject) => {
     const l = (m) => {
-      if (m.method === 'Page.loadEventFired') {
-        page.listeners.splice(page.listeners.indexOf(l), 1);
-        resolve();
-      }
+      if (m.method !== 'Page.loadEventFired') return;
+      done();
+      resolve();
+    };
+    const timer = setTimeout(() => { done(); reject(new Error(`navigation to ${url} never fired load`)); }, timeout);
+    done = () => {
+      clearTimeout(timer);
+      const i = page.listeners.indexOf(l);
+      if (i >= 0) page.listeners.splice(i, 1);
     };
     page.listeners.push(l);
   });

@@ -111,12 +111,12 @@ Auto therefore picks **built-in** by default and **headphones** when it sees a w
 | Rendering | WebGL via [three.js r185](https://threejs.org/) (vendored, tree-shaken) |
 | Shading | GLSL — geodesic raymarch, volumetric disk fringe, bloom and veiling flare, ACES tonemap |
 | Audio | [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) — oscillators, biquads, convolution reverb, waveshaping |
-| Build | esbuild, driven by ~100 lines of Node. No framework. |
+| Build | esbuild, driven by ~350 lines of Node across `scripts/`. No framework. |
 | Deployment | Deployed to [Cloudflare Workers](https://workers.cloudflare.com/) as static assets, at [kerr.cloakyard.com](https://kerr.cloakyard.com/) |
 
 **Why no framework.** One canvas, no routes, no components, no data fetching, and nothing in the DOM but a HUD. React would add a runtime and a reconciler to a page whose HUD is already redrawn imperatively sixty times a second — the one shape its model is worst at. Astro solves routing and content, and there is neither. What the project actually needed was module boundaries and a build step, and neither of those requires a framework.
 
-**The one dependency.** three.js is used for about twenty symbols: the renderer, render targets, two cameras, `Points`, and some vectors. Everything else is hand-written GLSL. [`src/three-entry.js`](src/three-entry.js) imports exactly those by name and `npm run vendor:three` tree-shakes them into `vendor/three.bundle.js`. Since three ships ESM only, the vendored artefact is a bundle rather than a copied file — and because it is committed, building and deploying needs no toolchain at all; esbuild runs only when the dependency is bumped.
+**The one dependency.** three.js is used for 24 symbols: the renderer, render targets, two cameras, `Points`, and some vectors. Everything else is hand-written GLSL. [`src/three-entry.js`](src/three-entry.js) imports exactly those by name and `npm run vendor:three` tree-shakes them into `vendor/three.bundle.js`. Since three ships ESM only, the vendored artefact is a bundle rather than a copied file — and it is **committed and hash-pinned**, so a build never resolves, downloads or re-shakes the dependency, and `npm run check` can prove the shipped bytes are the pinned ones. [`src/three.js`](src/three.js) is the single seam that reads it.
 
 Colour management is switched off and the renderer left in linear: every shader here already ends in an ACES tonemap and a gamma encode, so letting three convert as well would apply the transform twice.
 
@@ -128,7 +128,12 @@ The source is a module tree. The artefact is one self-contained HTML file. Those
 
 ```
 src/
+  index.html           the shell: head, HUD markup, three tags the build fills
+  styles.css
   main.js              the composition root, and the frame loop
+  three.js             the one seam that reads the vendored bundle
+  motion.js            prefers-reduced-motion, read once
+  pwa.js               service-worker registration, fire-and-forget
   audio/
     arrangement.js     the score as data — sections, chords, arpeggio, lead
     engine.js          Web Audio graph, sequencer, analyser
@@ -184,7 +189,7 @@ Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste th
 
 `npm run check` is the fast gate: the module tree bundles and every `#include` resolves; the vendored three.js matches its pinned hash; every `THREE.*` symbol used is one the vendor entry exports; the built page loads nothing from another origin; the layering holds; and every shader resolves to a whole program.
 
-`npm test` is the real one, and it needs no dependencies at all — [`node:test`](https://nodejs.org/api/test.html) plus a ~200-line DevTools Protocol client that drives whatever Chrome is already on the machine. It covers:
+`npm test` is the real one, and it needs no dependencies at all — [`node:test`](https://nodejs.org/api/test.html) plus a 300-line DevTools Protocol client ([`test/helpers/browser.mjs`](test/helpers/browser.mjs)) that drives whatever Chrome is already on the machine over Node's built-in `WebSocket`. It covers:
 
 | | |
 | --- | --- |
@@ -199,6 +204,26 @@ Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste th
 | **The PWA** | the worker registers, controls the page, reaches the network, and serves the app with the network cut — while the document itself is still refused a `fetch()` |
 
 The browser tests skip cleanly, with a note, if no Chrome is found.
+
+---
+
+## ☁️ Deploying
+
+```bash
+npm run deploy
+```
+
+That runs `check`, then `test`, then `build`, then `wrangler deploy`. Nothing else is needed — [`wrangler.jsonc`](wrangler.jsonc) points at `dist/` and the custom domain is already configured.
+
+A few things worth knowing:
+
+- **`public/_headers` is honoured.** It began life as a Cloudflare Pages feature, but the Workers static-asset runtime reads it too. It is consumed rather than served — requesting `/_headers` gets you the app, not the file.
+- **Cloudflare *appends* duplicate headers.** Two `_headers` rules naming the same header both apply, and a browser enforces the intersection. That is why the document's `connect-src` lives in a meta tag — see the Privacy section.
+- **`/index.html` 307s to `/`.** The asset runtime canonicalises it, and a redirected response cannot be written to the Cache API, so the service worker warms `/` instead.
+- **Turn Rocket Loader off** if it is on for the zone. It defers and rewrites inline scripts, and this page is one inline script. Nothing else in Speed → Optimization matters here; Cloudflare's own brotli already handles compression.
+- **`npm run deploy` now takes about a minute**, because the tests run first. They need a Chrome on the machine to be worth anything — without one the browser tests skip and you lose the only check that would catch a shader failing to compile.
+
+The whole deployment is twelve static files: the document, the manifest, the service worker, four PNG icons, three SVGs, the social card, and `_headers`.
 
 ---
 
