@@ -111,20 +111,44 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
      background:rgba(4,6,11,.88);outline:none}
 .btn:focus-visible{box-shadow:0 0 0 2px rgba(255,178,87,.45)}
 .btn.on{color:var(--ion);border-color:var(--ion)}
-/* this label changes with the mode (AUTO / BUILT-IN / SPEAKERS / PHONES);
-   a floor on the width stops the whole control row reflowing as it cycles */
-#bVoice{min-width:86px}
+/* One width for the word buttons, so the row reads as a set rather than as five
+   different sizes — it was 129 / 86 / 91 / 55 / 33 px. "OWN TRACK" is the
+   longest label at 91px and sets the floor, which also absorbs #bVoice cycling
+   through AUTO / BUILT-IN / SPEAKERS / PHONES without reflowing the row. The
+   help button is the deliberate exception: a lone "?" stretched to 96px reads
+   as a mistake rather than as alignment, so it stays square. */
+.tr .btn{min-width:96px}
+#bHelp{min-width:33px}
 
 .vol{display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.30);
      background:rgba(4,6,11,.72);-webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
      padding:0 12px}
 .vol span{font-size:9px;letter-spacing:.2em;color:#aab2c4}
-.vol input{-webkit-appearance:none;appearance:none;width:72px;height:20px;background:none;cursor:pointer}
-.vol input::-webkit-slider-runnable-track{height:1px;background:var(--line2)}
-.vol input::-moz-range-track{height:1px;background:var(--line2)}
-.vol input::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;background:var(--ember);
-     border-radius:50%;margin-top:-4px;box-shadow:0 0 8px rgba(255,178,87,.6)}
-.vol input::-moz-range-thumb{width:9px;height:9px;border:0;background:var(--ember);border-radius:50%}
+/* The track used to be a flat 1px line, which said nothing about which end was
+   loud. A wedge does, without a word or a second icon: it grows left to right,
+   and the ember part of it is the level. Both halves carry the *same*
+   clip-path so the slope matches — the fill is cut horizontally by a gradient
+   stop at --v rather than by a narrower box, which would tilt at a different
+   angle. --v is written by setVol in direct/voicing.js. */
+.vtrack{position:relative;width:72px;height:20px;display:flex;align-items:center}
+.vtrack::before,.vtrack::after{content:'';position:absolute;left:0;right:0;top:50%;height:11px;
+     transform:translateY(-50%);clip-path:polygon(0 100%,100% 0,100% 100%);pointer-events:none}
+.vtrack::before{background:rgba(255,255,255,.26)}
+.vtrack::after{background:linear-gradient(to right,
+     var(--ember) 0 var(--v,80%),transparent var(--v,80%))}
+.vol input{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:none;
+     cursor:pointer;position:relative;z-index:1;margin:0}
+.vol input::-webkit-slider-runnable-track{height:20px;background:none;border:0}
+.vol input::-moz-range-track{height:20px;background:none;border:0}
+/* A bar, not a dot. Everything else in this UI is rectilinear — the panel
+   borders, the arrangement segments, the pause glyph's two 3.2px bars — and a
+   circle was the one round thing in it. At 3px it also matches the pause bars,
+   and reading it against the wedge is easier than reading a disc that covered
+   the slope it was sitting on. */
+.vol input::-webkit-slider-thumb{-webkit-appearance:none;width:3px;height:16px;background:var(--ember);
+     border-radius:0;margin-top:2px;box-shadow:0 0 8px rgba(255,178,87,.6)}
+.vol input::-moz-range-thumb{width:3px;height:16px;border:0;border-radius:0;background:var(--ember);
+     box-shadow:0 0 8px rgba(255,178,87,.6)}
 .vol input:focus-visible{outline:1px solid var(--ember);outline-offset:3px}
 
 #help{position:fixed;inset:0;z-index:70;background:rgba(3,4,8,.88);
@@ -224,23 +248,19 @@ h1{font-family:var(--disp);font-weight:200;font-size:clamp(52px,15vw,168px);
   /* controls stay reachable on phones — they used to be hidden entirely,
      which left no way to pause or change output. left+right gives the row a
      real width so it wraps instead of running off the edge. */
-  /* Five controls in ~347px — it was six until play/pause moved down to the
-     transport row, which is where the slack came from. At 6px gaps and 8px
-     padding the six came to 356px and wrapped, stranding the "?" alone on a
-     second line; the trimmed gap and side padding are kept because under a
-     coarse pointer the 44px touch rules below still push it to two rows, and a
-     finger-sized target is worth more than a tidy row. */
+  /* Two rows on a phone, because one even row cannot fit: five controls at the
+     shared 96px would want 480px against ~347px of usable width. So the volume
+     takes a row to itself — which makes it a far easier target and wins back
+     room for the VOL caption the old layout had to drop — and the four word
+     buttons split the next row evenly. Four sharing 347px gives 82px each and
+     the longest label needs 72px, so the even row genuinely fits. */
   .tr{top:calc(5.2vh + 12px);left:14px;right:14px;gap:5px;row-gap:6px}
   .btn{font-size:8px;padding:9px 7px;letter-spacing:.12em}
-  #bVoice{min-width:62px}
-  .vol{padding:0 9px}
-  .vol input{width:56px}
-  /* the "VOL" caption does not fit, so the track has to carry the meaning —
-     at 1px and 30% white it just looked like a stray dot in a box */
-  .vol span{display:none}
-  .vol input::-webkit-slider-runnable-track{height:2px;background:rgba(255,255,255,.5)}
-  .vol input::-moz-range-track{height:2px;background:rgba(255,255,255,.5)}
-  .vol input::-webkit-slider-thumb{margin-top:-4px}
+  .tr .btn{min-width:0;flex:1}
+  #bHelp{min-width:0;flex:0 0 40px}
+  .vol{flex:1 0 100%;padding:0 12px;gap:12px}
+  /* the wedge has to grow with the row, or a 72px track sits in 347px of box */
+  .vtrack{flex:1;width:auto}
   .deck{left:16px;right:16px}
   .transport{gap:10px}
   #spec{left:16px;right:16px;width:calc(100% - 32px);height:26px}
