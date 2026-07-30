@@ -93,13 +93,26 @@ try { setVoice(localStorage.getItem(VOICE_KEY) || 'auto'); } catch(e){ setVoice(
 /* volume */
 const VOL_KEY = 'kerr.vol';
 const volEl = $('vol');
+/* The wedge behind the slider is drawn in CSS and needs to know the level, so
+   it reads it off --v. It has to land on .vtrack rather than on the input:
+   custom properties inherit downward, and the pseudo-elements that use it
+   belong to the parent. */
+const volTrack = volEl.parentElement;
 export function setVol(v, announceChange){
   v = Math.max(0, Math.min(1, v));
   Audio.vol = v;
   Audio.setVolume(v);
-  volEl.value = String(Math.round(v * 100));
+  const pct = Math.round(v * 100);
+  volEl.value = String(pct);
+  volTrack.style.setProperty('--v', pct + '%');
   try { localStorage.setItem(VOL_KEY, String(v)); } catch(e){}
   if (announceChange) toast('Volume ' + Math.round(v * 100) + '%');
 }
 volEl.oninput = () => setVol(volEl.value / 100, false);
-try { const s = localStorage.getItem(VOL_KEY); if (s !== null) setVol(parseFloat(s), false); } catch(e){}
+/* Always run it once, even with nothing stored: --v has to be set for the wedge
+   to match the slider, and leaving it unset made the CSS fallback silently
+   responsible for agreeing with the value="" in the markup. */
+try {
+  const s = localStorage.getItem(VOL_KEY);
+  setVol(s === null ? volEl.value / 100 : parseFloat(s), false);
+} catch(e){ setVol(volEl.value / 100, false); }

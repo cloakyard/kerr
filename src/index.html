@@ -72,8 +72,12 @@
     <div class="row"><span class="k">STEPS</span><b id="tQ">180 / 0.85</b></div>
   </div>
   <div class="tr soft">
+    <!-- The wedge behind the slider is what says which end is loud; .vtrack is
+         the box it is drawn in, and setVol writes the level to --v. -->
     <div class="vol"><span>VOL</span>
-      <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
+      <div class="vtrack">
+        <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume">
+      </div></div>
     <button class="btn" id="bVoice" aria-label="Change output voicing">AUTO</button>
     <button class="btn" id="bLoad" aria-label="Play your own audio file">OWN TRACK</button>
     <button class="btn" id="bFull" aria-label="Toggle fullscreen">FULL</button>
