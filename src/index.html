@@ -72,7 +72,6 @@
     <div class="row"><span class="k">STEPS</span><b id="tQ">180 / 0.85</b></div>
   </div>
   <div class="tr soft">
-    <button class="btn" id="bPause" aria-label="Pause or resume">PAUSE</button>
     <div class="vol"><span>VOL</span>
       <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
     <button class="btn" id="bVoice" aria-label="Change output voicing">AUTO</button>
@@ -86,9 +85,21 @@
       <div class="sect" id="sect" aria-live="polite" aria-atomic="true">DRIFT</div>
       <div class="clock"><b id="t1">0:00</b> / <span id="t2">0:00</span></div>
     </div>
-    <div id="map" tabindex="0" role="slider" aria-label="Timeline"
-         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div id="play"></div><div id="scrub">0:00</div>
+    <!-- Transport: the play control sits with the timeline it drives, the way
+         it does in a media player. Both glyphs live in the one SVG and CSS
+         shows whichever the next click will produce — swapping textContent
+         would delete the icon. -->
+    <div class="transport">
+      <button class="btn icon" id="bPause" aria-label="Pause">
+        <svg class="ico" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <g class="i-pause"><rect x="5.5" y="3.5" width="3.2" height="13"/><rect x="11.3" y="3.5" width="3.2" height="13"/></g>
+          <path class="i-play" d="M6 3.5 L16.5 10 L6 16.5 Z"/>
+        </svg>
+      </button>
+      <div id="map" tabindex="0" role="slider" aria-label="Timeline"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div id="play"></div><div id="scrub">0:00</div>
+      </div>
     </div>
   </div>
   <div class="hint" id="hint">Drag to orbit · Scroll to fall in · Drag the timeline to scrub · ? for keys</div>
