@@ -36,7 +36,7 @@
 /manifest.webmanifest
   Cache-Control: public, max-age=3600
 
-/favicon.svg
+/favicon.png
   Cache-Control: public, max-age=604800
 
 /icon.svg
