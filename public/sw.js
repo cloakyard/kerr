@@ -23,7 +23,7 @@ const VERSION = 'kerr-v1';
    the canonical /, and a redirected response cannot be written to the Cache
    API at all — that entry would fail every time. / is what the browser
    actually navigates to anyway. */
-const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg'];
+const SHELL = ['/', '/manifest.webmanifest', '/favicon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

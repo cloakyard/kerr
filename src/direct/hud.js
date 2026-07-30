@@ -104,7 +104,13 @@ export function toast(msg){
   toastT = setTimeout(() => el.classList.remove('on'), 1600);
 }
 
-$('bPause').onclick = () => { $('bPause').textContent = Audio.toggle() ? 'PAUSE' : 'RESUME'; };
+/* The button holds an SVG, so its state is a class and an aria-label — writing
+   textContent here would replace the icon with a word and never put it back. */
+$('bPause').onclick = () => {
+  const playing = Audio.toggle();
+  $('bPause').classList.toggle('paused', !playing);
+  $('bPause').setAttribute('aria-label', playing ? 'Pause' : 'Resume');
+};
 $('bFull').onclick = () => {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
   else document.exitFullscreen();

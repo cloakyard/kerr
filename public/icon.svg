@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- The app-icon cut of the favicon: same mark, full bleed.
-       favicon.svg rounds its own corners because a browser tab draws it
+  <!-- The app-icon cut of the original favicon mark, kept full bleed.
+       The browser favicon carries its own background because tabs draw it
        unmasked. Every install surface applies its own mask — iOS a squircle,
        Android whatever the launcher fancies — and a baked-in radius inside
        that reads as a picture of an icon rather than an icon. So: square. -->

@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BPM, SPB, STEP, BAR, SECTIONS, TOTAL_BARS, TOTAL_STEPS, DURATION,
-  PROG, ARP, LEAD, mtof, frand,
+  PROG, ARP, LEAD, PHRASE, mtof, frand, sectionOfBar, intensityAt,
 } from '../src/audio/arrangement.js';
 
 test('tempo maths is self-consistent', () => {
@@ -48,6 +48,101 @@ test('every section has a name and a type the camera knows about', () => {
 
 test('section names are unique', () => {
   assert.equal(new Set(SECTIONS.map((s) => s.n)).size, SECTIONS.length);
+});
+
+/* The continuity invariant. Every section used to swell across its own
+   progress from its own floor, so all nine section changes stepped backwards —
+   between 25% and 77% of the scheduled energy — and the piece sounded like it
+   restarted ten times. These four tests are the reason that cannot come back by
+   editing one number in SECTIONS. */
+test('intensity is one curve: each section leaves where the next comes in', () => {
+  for (let i = 1; i < SECTIONS.length; i++) {
+    assert.equal(
+      SECTIONS[i].i0, SECTIONS[i - 1].i1,
+      `${SECTIONS[i].n} comes in at ${SECTIONS[i].i0} but ${SECTIONS[i - 1].n} left at ${SECTIONS[i - 1].i1}`,
+    );
+  }
+});
+
+test('every section declares an intensity, and all of them are usable levels', () => {
+  for (const s of SECTIONS) {
+    for (const k of ['i0', 'i1']) {
+      assert.equal(typeof s[k], 'number', `${s.n} has no ${k}`);
+      // > 0: a level of zero is a hole, which is the thing being fixed
+      assert.ok(s[k] > 0 && s[k] <= 1, `${s.n}.${k} = ${s[k]} is not a level`);
+    }
+  }
+  // the piece has to actually go somewhere
+  assert.equal(Math.max(...SECTIONS.map((s) => s.i1)), 1, 'nothing reaches full intensity');
+  assert.equal(SECTIONS.at(-1).t, 'outro', 'the quietest ending is not last');
+  assert.ok(SECTIONS.at(-1).i1 < SECTIONS[0].i0, 'the piece does not end below where it began');
+});
+
+test('intensityAt never steps at a section boundary', () => {
+  // one step of a section's own slope is the most it may move; the steepest
+  // section here is HORIZON, falling 0.94 over 12 bars
+  const slope = Math.max(...SECTIONS.map((s) => Math.abs(s.i1 - s.i0) / (s.b * 16)));
+  for (let i = 1; i < SECTIONS.length; i++) {
+    const at = SECTIONS[i].s * 16;
+    const jump = Math.abs(intensityAt(at) - intensityAt(at - 1));
+    assert.ok(jump <= slope + 1e-9, `${SECTIONS[i].n} steps ${jump.toFixed(4)} at its downbeat`);
+  }
+});
+
+test('intensityAt stays inside every section it is asked about', () => {
+  for (const s of SECTIONS) {
+    const lo = Math.min(s.i0, s.i1), hi = Math.max(s.i0, s.i1);
+    for (let st = 0; st < s.b * 16; st++) {
+      const I = intensityAt(s.s * 16 + st);
+      assert.ok(I >= lo - 1e-9 && I <= hi + 1e-9, `${s.n} step ${st}: ${I} outside [${lo}, ${hi}]`);
+    }
+    assert.ok(Math.abs(intensityAt(s.s * 16) - s.i0) < 1e-9, `${s.n} does not start at i0`);
+  }
+  // out of range on both sides rather than NaN — the sequencer clamps, not guesses
+  assert.equal(intensityAt(0), SECTIONS[0].i0);
+  assert.ok(Math.abs(intensityAt(TOTAL_STEPS * 2) - SECTIONS.at(-1).i1) < 1e-9);
+  assert.ok(Math.abs(intensityAt(-16) - SECTIONS[0].i0) < 1e-9);
+});
+
+test('sectionOfBar covers the piece and agrees with the offsets', () => {
+  for (const s of SECTIONS) {
+    assert.equal(sectionOfBar(s.s).n, s.n, `${s.n} does not own its own first bar`);
+    assert.equal(sectionOfBar(s.s + s.b - 1).n, s.n, `${s.n} does not own its own last bar`);
+  }
+  for (let b = 0; b < TOTAL_BARS; b++) {
+    const s = sectionOfBar(b);
+    assert.ok(b >= s.s && b < s.s + s.b, `bar ${b} landed in ${s.n}`);
+  }
+  assert.equal(sectionOfBar(-1).n, SECTIONS[0].n);          // before the start
+  assert.equal(sectionOfBar(TOTAL_BARS).n, SECTIONS.at(-1).n);
+});
+
+/* The pads, the tick figure and the melody are all grouped on the absolute bar
+   so their phrasing does not re-phase where sections meet. That is only sound
+   if no section starts mid-phrase. */
+test('every section starts on a phrase boundary', () => {
+  assert.equal(PHRASE, 4);
+  for (const s of SECTIONS) {
+    assert.equal(s.s % PHRASE, 0, `${s.n} starts at bar ${s.s}, mid-phrase`);
+    assert.equal(s.b % 2, 0, `${s.n} is ${s.b} bars, which breaks the two-bar chord grid`);
+  }
+});
+
+test('the lead line agrees with the harmony under it at every bar', () => {
+  /* LEAD is eight bars written against two bars per chord, so it only lines up
+     with PROG when it is indexed on the absolute bar. It used to be indexed on
+     the bar within the section, which both restarted the melody at every
+     section change and — since section starts are not all multiples of eight —
+     put its D minor opening over whatever chord was sounding. */
+  for (let bar = 0; bar < TOTAL_BARS; bar++) {
+    const leadGroup = Math.floor((bar % 8) / 2);      // which chord LEAD was written for
+    const progIndex = (bar >> 1) % 4;                 // which chord actually sounds
+    assert.equal(leadGroup, progIndex, `bar ${bar}: lead is on chord ${leadGroup}, harmony is ${progIndex}`);
+  }
+  // and the bug was real: these sections do not start on an eight-bar boundary,
+  // so section-local indexing put the melody on the wrong chord in each of them
+  const offPhrase = SECTIONS.filter((s) => s.s % 8 !== 0).map((s) => s.n);
+  assert.deepEqual(offPhrase, ['ASCENT', 'EVENT HORIZON', 'FALLING', 'ASCENT III', 'HORIZON']);
 });
 
 test('the progression is four chords of five notes, all in range', () => {

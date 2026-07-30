@@ -4,7 +4,7 @@
    about, and replaced, on its own. */
 import {
   SPB, STEP, BAR, SECTIONS, TOTAL_STEPS, DURATION,
-  PROG, ARP, LEAD, mtof, frand
+  PROG, ARP, LEAD, PHRASE, mtof, frand, sectionOfBar, intensityAt
 } from './arrangement.js';
 
 export const Audio = {
@@ -273,22 +273,34 @@ export const Audio = {
     n.start(t); n.stop(t + 0.1);
 
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(v, t + 0.06);
-    g.gain.setValueAtTime(v, t + dur - 0.14);
-    g.gain.linearRampToValueAtTime(0, t + dur + 0.1);
+    g.gain.linearRampToValueAtTime(v, t + 0.18);
+    g.gain.setValueAtTime(v, t + dur);
+    g.gain.linearRampToValueAtTime(0, t + dur + 0.18);
   },
 
-  // 16' pedal rank — the floor of the whole piece.
+  /* 16' pedal rank — the floor of the whole piece.
+
+     `a` is both the attack and the release, and the release starts at `dur`
+     rather than before it. Consecutive blocks sit exactly `dur` apart, so the
+     outgoing ramp down and the incoming ramp up are mirror images over the same
+     window and sum to a constant: the floor never thins, at a chord change or
+     at a section change. It used to hold to `dur - 0.18` and release past the
+     next attack, which left a dip under every boundary. */
   pedal(t, dur, midi, v){
     const c = this.ctx;
+    const a = Math.min(0.5, dur * 0.1);
     const g = c.createGain(); g.connect(this.bus.music);
     const f = mtof(midi);
     for (const [mult, amp] of [[1, 0.85], [2, 0.5], [3, 0.2], [4, 0.1]]){
-      const o = this.osc('sine', f * mult, t, dur + 0.35);
+      const o = this.osc('sine', f * mult, t, dur + a + 0.1);
       const og = c.createGain(); og.gain.value = amp;
       o.connect(og); og.connect(g);
     }
-    // sub-octave via the exciter, so laptops get harmonics instead of nothing
+    /* Sub-octave via the exciter, so laptops get harmonics instead of nothing.
+       This one is deliberately *not* crossfaded — two sines an octave down at
+       neighbouring roots overlapping is how you get a cancellation notch in the
+       only octave with no headroom to spare. A 0.14 s dip in the sub under a
+       continuous harmonic pedal is inaudible; a notch is not. */
     const s = this.osc('sine', f * 0.5, t, dur + 0.35);
     const sg = c.createGain(); s.connect(sg); sg.connect(this.bus.subIn);
     sg.gain.setValueAtTime(0, t);
@@ -297,14 +309,16 @@ export const Audio = {
     sg.gain.linearRampToValueAtTime(0, t + dur);
 
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(v, t + 0.12);
-    g.gain.setValueAtTime(v, t + dur - 0.18);
-    g.gain.linearRampToValueAtTime(0, t + dur + 0.1);
+    g.gain.linearRampToValueAtTime(v, t + a);
+    g.gain.setValueAtTime(v, t + dur);
+    g.gain.linearRampToValueAtTime(0, t + dur + a);
   },
 
-  // String ensemble: slow bloom, wide, heavily reverbed.
+  // String ensemble: slow bloom, wide, heavily reverbed. Same mirrored
+  // crossfade as the pedal — see there for why the release starts at `dur`.
   strings(t, dur, notes, v){
     const c = this.ctx;
+    const a = dur * 0.28;
     const g = c.createGain(); g.connect(this.bus.music);
     const rv = c.createGain(); rv.gain.value = v * 2.4; g.connect(rv); rv.connect(this.bus.revIn);
     const flt = c.createBiquadFilter(); flt.type = 'lowpass'; flt.Q.value = 0.9;
@@ -316,16 +330,16 @@ export const Audio = {
     this.pan(L, -0.6).connect(flt); this.pan(R, 0.6).connect(flt);
     for (const m of notes){
       for (const [d, side, amp] of [[-8, L, 0.5], [8, R, 0.5], [0, flt, 0.55]]){
-        const o = this.osc('sawtooth', mtof(m), t, dur + 0.55);
+        const o = this.osc('sawtooth', mtof(m), t, dur + a + 0.1);
         o.detune.value = d;
         const og = c.createGain(); og.gain.value = amp;
         o.connect(og); og.connect(side);
       }
     }
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(v, t + dur * 0.45);
-    g.gain.setValueAtTime(v, t + dur * 0.76);
-    g.gain.linearRampToValueAtTime(0, t + dur + 0.4);
+    g.gain.linearRampToValueAtTime(v, t + a);
+    g.gain.setValueAtTime(v, t + dur);
+    g.gain.linearRampToValueAtTime(0, t + dur + a);
   },
 
   // Bell arpeggio — the ticking figure. The 4.2x partial is deliberately
@@ -351,6 +365,7 @@ export const Audio = {
   // Choir "aah" — saw pairs through three vowel formants, with vibrato.
   choir(t, dur, notes, v){
     const c = this.ctx;
+    const a = dur * 0.3;
     const g = c.createGain(); g.connect(this.bus.music);
     const rv = c.createGain(); rv.gain.value = v * 2.8; g.connect(rv); rv.connect(this.bus.revIn);
     const src = c.createGain(); src.gain.value = 1;
@@ -361,9 +376,9 @@ export const Audio = {
     }
     for (const m of notes){
       for (const d of [-6, 6]){
-        const o = this.osc('sawtooth', mtof(m), t, dur + 0.45);
+        const o = this.osc('sawtooth', mtof(m), t, dur + a + 0.1);
         o.detune.value = d;
-        const lfo = this.osc('sine', 4.6 + frand(m + d) * 1.4, t, dur + 0.45);
+        const lfo = this.osc('sine', 4.6 + frand(m + d) * 1.4, t, dur + a + 0.1);
         const lg = c.createGain(); lg.gain.value = 5;
         lfo.connect(lg); lg.connect(o.detune);
         const og = c.createGain(); og.gain.value = 0.42;
@@ -371,9 +386,9 @@ export const Audio = {
       }
     }
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(v, t + dur * 0.35);
-    g.gain.setValueAtTime(v, t + dur * 0.72);
-    g.gain.linearRampToValueAtTime(0, t + dur + 0.3);
+    g.gain.linearRampToValueAtTime(v, t + a);
+    g.gain.setValueAtTime(v, t + dur);
+    g.gain.linearRampToValueAtTime(0, t + dur + a);
   },
 
   // Solo line — bowed rather than plucked, with a slow vibrato.
@@ -442,10 +457,17 @@ export const Audio = {
     n.start(t); n.stop(t + 0.05);
   },
 
-  // A crescendo, not a white-noise riser: it opens a band upward and stops
-  // well short of the frequencies that hurt on small speakers.
-  swell(t, dur, v){
+  /* A crescendo, not a white-noise riser: it opens a band upward and stops
+     well short of the frequencies that hurt on small speakers.
+
+     It now peaks exactly at `dur` — the downbeat it is leading to — and decays
+     over `tail` past it. It used to be shaped to die *at* `dur`, so the thing
+     carrying the ear into a section change let go at the change and left a
+     hole for the boom to land in. Bleeding the tail across the boundary is what
+     the swell is for. */
+  swell(t, dur, v, tail){
     const c = this.ctx;
+    const tl = tail === undefined ? dur * 0.12 : tail;
     const n = this.src(this.noise); n.loop = true;
     const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.3;
     bp.frequency.setValueAtTime(300, t);
@@ -454,9 +476,10 @@ export const Audio = {
     const rv = c.createGain(); rv.gain.value = v * 1.6; g.connect(rv); rv.connect(this.bus.revIn);
     n.connect(bp); bp.connect(g);
     g.gain.setValueAtTime(0.0006, t);
-    g.gain.exponentialRampToValueAtTime(v * 0.55, t + dur * 0.92);
-    g.gain.linearRampToValueAtTime(0, t + dur);
-    n.start(t); n.stop(t + dur + 0.05);
+    g.gain.exponentialRampToValueAtTime(v * 0.55, t + dur);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur + tl);
+    g.gain.linearRampToValueAtTime(0, t + dur + tl + 0.05);
+    n.start(t); n.stop(t + dur + tl + 0.1);
     this.vis(t, 'riser', dur);
   },
 
@@ -487,122 +510,163 @@ export const Audio = {
   vis(t, kind, v){ this.events.push({ t, kind, v }); },
 
   /* ---- sequencer ---- */
-  sectionOfBar(bar){
-    for (let i = SECTIONS.length - 1; i >= 0; i--) if (bar >= SECTIONS[i].s) return SECTIONS[i];
-    return SECTIONS[0];
-  },
+  sectionOfBar(bar){ return sectionOfBar(bar); },      // direct/camera.js asks via here
 
   scheduleStep(gs, t){
     const bar = (gs / 16) | 0, st = gs % 16;
-    const sec = this.sectionOfBar(bar), lb = bar - sec.s, T = sec.t;
+    const sec = sectionOfBar(bar), lb = bar - sec.s, T = sec.t;
     const ch = PROG[((bar >> 1) % 4)];
-    // progress through the section, 0..1 — every section swells across this
+
+    /* `I` is the piece's intensity, continuous across every section change —
+       see the note on SECTIONS in arrangement.js. Every level below is a share
+       of it, so nothing steps backwards at a downbeat.
+
+       `p` — progress through this section — survives only where something is
+       genuinely staged *within* a section: voices entering during the intro,
+       the timpani pulse subdividing through a build, the outro thinning out.
+       Those are section-local by nature. Levels are not. */
+    const I = intensityAt(gs);
     const p = (lb * 16 + st) / (sec.b * 16);
+
+    /* Sustained levels: a floor plus a share of I. The floor is what stops a
+       quiet passage from becoming an absence, and the top of each range is
+       where the mix was tuned, so the limiter still sees what it used to. */
+    const vPedal = 0.128 + 0.072 * I;
+    const vStr   = 0.042 + 0.088 * I;
+    const vArp   = 0.086 + 0.074 * I;
+    const vTim   = 0.220 + 0.340 * I;
+    /* One density ramp for the whole piece. It saturates above 1 — every eighth
+       note plays and none are skipped — which is why the tick can thicken into a
+       drop and hold there instead of thinning out at the downbeat. */
+    const dens   = 0.30 + I * 1.60;
 
     if (st === 0 && lb === 0) this.vis(t, 'section', SECTIONS.indexOf(sec));
 
-    // the ticking arpeggio runs almost throughout; sections vary its density
-    const arpAt = (dens, vel, oct) => {
+    /* The tick figure. Grouped on the absolute bar, never on the bar within the
+       section, so the figure does not re-phase where sections meet. */
+    const arpAt = (dn, vel, oct) => {
       if (st % 2) return;                                   // eighth-note grid
       const e = st >> 1;
-      if (frand(bar * 31.7 + e * 7.3) > dens) return;
+      if (frand(bar * 31.7 + e * 7.3) > dn) return;
       this.arp(t, ch.notes[ARP[bar % 2][e]] + (oct || 0) * 12, vel);
       if (e === 0) this.vis(t, 'snare', vel * 1.6);         // gives the visuals a pulse
     };
+    /* LEAD is eight bars long and written against two bars per chord, so it only
+       lines up with PROG when it is indexed on the absolute bar. Keying it to the
+       bar within the section restarted the melody at every section — and, because
+       section starts are not all multiples of eight, put its D minor opening over
+       whatever chord happened to be sounding. Both were the same bug. */
     const leadAt = (vel) => {
       if (st % 2) return;
-      const m = LEAD[(((lb % 8) * 8) + (st >> 1)) % 64];
+      const m = LEAD[(((bar % 8) * 8) + (st >> 1)) % 64];
       if (m) this.lead(t, BAR * 0.5, m, vel);
     };
 
     /* DRIFT — organ pedal in the dark, the clock starting up */
     if (T === 'intro'){
       if (st === 0 && lb === 0) this.boom(t, 0.4);
-      if (st === 0 && lb % 4 === 0) this.pedal(t, BAR * 4, ch.root, 0.15 + p * 0.06);
-      if (st === 0 && lb % 2 === 0) this.strings(t, BAR * 2, ch.notes.slice(0, 4), 0.045 + p * 0.05);
-      if (lb >= 2) arpAt(0.3 + p * 0.55, 0.10 + p * 0.04);
+      if (st === 0 && bar % PHRASE === 0) this.pedal(t, BAR * 4, ch.root, vPedal * 0.92);
+      if (st === 0 && bar % 2 === 0) this.strings(t, BAR * 2, ch.notes.slice(0, 4), vStr * 0.62);
+      if (lb >= 2) arpAt(dens, vArp * 0.82);
       if (lb >= 4 && st === 0) this.clock(t, 0.05);
       if (lb >= 6 && st === 8) this.clock(t, 0.035);
-      if (lb >= 8 && st === 0 && lb % 4 === 0) this.timpani(t, ch.root, 0.3);
-      if (lb === sec.b - 1 && st === 0) this.swell(t, BAR, 0.18);
+      if (lb >= 8 && st === 0 && bar % PHRASE === 0) this.timpani(t, ch.root, vTim * 0.9);
+      // peaks on ASCENT's downbeat and decays across it, rather than at it
+      if (lb === sec.b - 1 && st === 0) this.swell(t, BAR, 0.18, BAR * 0.9);
     }
 
     /* ASCENT — everything tightens and rises into the next horizon */
     else if (T === 'build'){
       const nb = sec.b;
-      if (lb === 0 && st === 0) this.swell(t, nb * BAR, 0.3);
-      if (st === 0 && lb % 2 === 0){
-        this.pedal(t, BAR * 2, ch.root, 0.17 + p * 0.09);
-        this.strings(t, BAR * 2, ch.notes, 0.065 + p * 0.085);
+      if (lb === 0 && st === 0) this.swell(t, nb * BAR, 0.3, BAR * 0.9);
+      if (st === 0 && bar % 2 === 0){
+        this.pedal(t, BAR * 2, ch.root, vPedal);
+        this.strings(t, BAR * 2, ch.notes, vStr);
       }
-      arpAt(0.6 + p * 0.4, 0.10 + p * 0.06);
-      if (st === 0) this.clock(t, 0.05 + p * 0.025);
-      if (st === 8) this.clock(t, 0.04 + p * 0.025);
-      // the timpani pulse doubles, then doubles again
+      arpAt(dens, vArp);
+      if (st === 0) this.clock(t, 0.05 + I * 0.03);
+      if (st === 8) this.clock(t, 0.04 + I * 0.03);
+      // the pulse doubles, then doubles again — staged inside the section,
+      // which is what a build *is*, so this one is rightly on p
       const div = p < 0.4 ? 16 : (p < 0.72 ? 8 : 4);
-      if (st % div === 0) this.timpani(t, ch.root, 0.2 + 0.36 * p);
-      if (lb >= nb - 2 && st % 4 === 2) this.arp(t, ch.notes[4] + 12, 0.055 + 0.05 * p);
+      if (st % div === 0) this.timpani(t, ch.root, vTim);
+      if (lb >= nb - 2 && st % 4 === 2) this.arp(t, ch.notes[4] + 12, 0.05 + 0.05 * I);
     }
 
-    /* EVENT HORIZON / INGRESS / SINGULARITY — the peaks. These bloom over
-       their full length rather than slamming in: layers arrive in turn and
-       the whole section keeps rising until it resolves. */
+    /* EVENT HORIZON / INGRESS / SINGULARITY — the peaks.
+
+       The arrival is the boom and the layers that come in with it: the organ
+       ranks, the choir stack, the tick an octave up. It is *not* a step in
+       level. `I` climbs straight through the downbeat, so what lands is more
+       music rather than — as it was — a 59% drop in energy followed by a
+       sixteen-bar climb back to where the build already was. */
     else if (T === 'drop' || T === 'drop2' || T === 'final'){
       const big = T !== 'drop';
       const peak = T === 'final';
-      const I = 0.55 + 0.45 * Math.min(1, p * 1.55);        // the swell envelope
-      if (st === 0 && lb === 0){ this.boom(t, big ? 0.6 : 0.5); this.duckAt(t, 0.2); }
-      if (st === 0 && lb % 2 === 0){
-        this.pedal(t, BAR * 2, ch.root, 0.2 * I);
-        this.organ(t, BAR * 2, ch.notes[0], 0.13 * I, big ? 0.85 : 0.6);
-        this.organ(t, BAR * 2, ch.notes[2], 0.09 * I, big ? 0.8 : 0.55);
-        this.strings(t, BAR * 2, ch.notes, 0.125 * I);
+      // just enough duck to let the boom through; at 0.2 it was a hole
+      if (st === 0 && lb === 0){ this.boom(t, big ? 0.6 : 0.5); this.duckAt(t, 0.1); }
+      if (st === 0 && bar % 2 === 0){
+        this.pedal(t, BAR * 2, ch.root, vPedal);
+        this.organ(t, BAR * 2, ch.notes[0], 0.075 + 0.052 * I, big ? 0.85 : 0.6);
+        this.organ(t, BAR * 2, ch.notes[2], 0.048 + 0.038 * I, big ? 0.8 : 0.55);
+        this.strings(t, BAR * 2, ch.notes, vStr * 1.08);
       }
-      if (big && st === 0 && lb % 4 === 0)
-        this.choir(t, BAR * 4, [ch.notes[1], ch.notes[3], ch.notes[4]], 0.085 * I);
-      arpAt(1.0, 0.105 * I, peak ? 1 : 0);
-      if (st === 0) this.timpani(t, ch.root, 0.6 * I);
-      if (st === 8) this.timpani(t, ch.root, 0.38 * I);
-      if (peak && (st === 4 || st === 12)) this.timpani(t, ch.root + 7, 0.26 * I);
+      if (big && st === 0 && bar % PHRASE === 0)
+        this.choir(t, BAR * 4, [ch.notes[1], ch.notes[3], ch.notes[4]], 0.026 + 0.058 * I);
+      arpAt(dens, vArp, peak ? 1 : 0);
+      if (st === 0) this.timpani(t, ch.root, vTim);
+      if (st === 8) this.timpani(t, ch.root, vTim * 0.62);
+      if (peak && (st === 4 || st === 12)) this.timpani(t, ch.root + 7, vTim * 0.44);
       if (st === 4 || st === 12) this.clock(t, 0.045);
-      if (big) leadAt(0.1 * I);
-      if (peak && st === 0 && lb % 4 === 2) this.arp(t, ch.notes[4] + 12, 0.09);
+      if (big) leadAt(0.05 + 0.052 * I);
+      if (peak && st === 0 && bar % PHRASE === 2) this.arp(t, ch.notes[4] + 12, 0.09);
     }
 
-    /* FALLING — strips back to arpeggio and voices */
+    /* FALLING — strips back to arpeggio and voices.
+
+       The space is made by taking the organ and the choir stack out and by
+       dropping the timpani until bar six, not by dropping the level: the pads
+       come *up* to fill what the layers left. Removing layers at a constant
+       level is release; cutting the level as well was a restart. The fall
+       happens across the twelve bars, where the ear can follow it. */
     else if (T === 'break'){
-      if (st === 0 && lb % 4 === 0) this.pedal(t, BAR * 4, ch.root, 0.14);
-      if (st === 0 && lb % 2 === 0) this.strings(t, BAR * 2, ch.notes.slice(0, 4), 0.085);
-      if (st === 0 && lb % 4 === 2) this.choir(t, BAR * 2, [ch.notes[1], ch.notes[3]], 0.07);
-      arpAt(0.55 + p * 0.35, 0.105);
+      if (st === 0 && bar % PHRASE === 0) this.pedal(t, BAR * 4, ch.root, vPedal);
+      if (st === 0 && bar % 2 === 0) this.strings(t, BAR * 2, ch.notes.slice(0, 4), vStr * 1.05);
+      if (st === 0 && bar % PHRASE === 2) this.choir(t, BAR * 2, [ch.notes[1], ch.notes[3]], 0.028 + 0.055 * I);
+      arpAt(dens * 0.82, vArp);
       if (st === 0) this.clock(t, 0.05);
-      if (lb >= 6 && st === 0 && lb % 2 === 0) this.timpani(t, ch.root, 0.26);
-      if (lb === sec.b - 1 && st === 0) this.swell(t, BAR, 0.2);
+      if (lb >= 6 && st === 0 && bar % 2 === 0) this.timpani(t, ch.root, vTim * 0.62);
+      if (lb === sec.b - 1 && st === 0) this.swell(t, BAR, 0.2, BAR * 0.9);
     }
 
     /* DILATION — half-time, wide, the solo line carries it */
     else if (T === 'bridge'){
-      if (st === 0 && lb % 2 === 0){
-        this.pedal(t, BAR * 2, ch.root, 0.18);
-        this.strings(t, BAR * 2, ch.notes, 0.115);
-        this.organ(t, BAR * 2, ch.notes[0], 0.08, 0.5);
+      if (st === 0 && bar % 2 === 0){
+        this.pedal(t, BAR * 2, ch.root, vPedal);
+        this.strings(t, BAR * 2, ch.notes, vStr);
+        this.organ(t, BAR * 2, ch.notes[0], 0.042 + 0.042 * I, 0.5);
       }
-      if (st === 0 && lb % 4 === 0) this.choir(t, BAR * 4, [ch.notes[2], ch.notes[4]], 0.075);
-      arpAt(0.85, 0.10);
-      if (st === 0) this.timpani(t, ch.root, 0.34);
+      if (st === 0 && bar % PHRASE === 0) this.choir(t, BAR * 4, [ch.notes[2], ch.notes[4]], 0.026 + 0.055 * I);
+      arpAt(dens * 0.88, vArp);
+      if (st === 0) this.timpani(t, ch.root, vTim * 0.72);
       if (st === 8) this.clock(t, 0.05);
-      leadAt(0.11);
+      leadAt(0.05 + 0.052 * I);
     }
 
-    /* HORIZON — everything recedes until only the pedal is left */
+    /* HORIZON — everything recedes until only the pedal is left.
+
+       The one section with nothing after it, so the one place a level may run
+       down to nothing: `I` falls from SINGULARITY's ceiling to 0.06 across the
+       twelve bars and the voices are scaled by it directly rather than sitting
+       on a floor. It still *enters* at exactly where SINGULARITY left off — the
+       fade is the whole section, not a step at the downbeat. */
     else if (T === 'outro'){
-      const fade = Math.max(0, 1 - lb / sec.b);
       if (st === 0 && lb === 0) this.boom(t, 0.5);
-      if (st === 0 && lb % 4 === 0) this.pedal(t, BAR * 4, ch.root, 0.17 * fade + 0.03);
-      if (st === 0 && lb % 2 === 0) this.strings(t, BAR * 2, ch.notes.slice(0, 4), 0.1 * fade + 0.02);
-      if (lb < 8) arpAt(0.5 * fade + 0.12, 0.1 * fade + 0.02);
-      if (lb < 6 && st === 0) this.clock(t, 0.045 * fade);
-      if (lb < 5 && st === 0 && lb % 2 === 0) this.timpani(t, ch.root, 0.24 * fade);
+      if (st === 0 && bar % PHRASE === 0) this.pedal(t, BAR * 4, ch.root, 0.2 * I + 0.012);
+      if (st === 0 && bar % 2 === 0) this.strings(t, BAR * 2, ch.notes.slice(0, 4), 0.14 * I + 0.008);
+      if (lb < 9) arpAt(dens * 0.9, 0.16 * I + 0.01);
+      if (lb < 7 && st === 0) this.clock(t, 0.05 * I);
+      if (lb < 6 && st === 0 && bar % 2 === 0) this.timpani(t, ch.root, 0.3 * I);
     }
   },
 
