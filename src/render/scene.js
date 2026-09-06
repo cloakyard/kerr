@@ -31,13 +31,11 @@ export const uBH = {
   uCamUp:{value:new THREE.Vector3()}, uCamFwd:{value:new THREE.Vector3()},
   uParticles:{value:null},
   uBass:{value:0}, uMid:{value:0}, uHigh:{value:0},
+  uPulse:{value:0}, uEnergy:{value:0}, uChroma:{value:new THREE.Vector3(1.0,0.48,0.40)},
   uHeat:{value:0}, uJet:{value:0}, uLens:{value:1}, uDiskGain:{value:1},
   uSpin:{value:0.6}, uRh:{value:1}, uDin:{value:4.63}, uDout:{value:9.35},
-  /* The film's disk carries no frequency shifts at all. This keeps a whisper
-     — pow(shift, 0.15) spans about +/-6% across the disk, far below the point
-     where an eye reads it as a lopsided image, but enough that the near edge
-     is not perfectly flat. */
-  uDoppler:{value:0.05}, uThick:{value:0.22}, uFringe:{value:1.0},
+  // DNEG's film treatment omits frequency and associated brightness shifts.
+  uDoppler:{value:0.0}, uThick:{value:0.22}, uFringe:{value:1.0},
   uBhUv:{value:new THREE.Vector2(0.5,0.5)},
   uRings:{value:[0,1,2,3,4].map(()=>new THREE.Vector4(0,0,0.02,0))}
 };
@@ -45,7 +43,8 @@ export const uBH = {
 const uFin = {
   uScene:{value:null}, uBloom:{value:null}, uFlare:{value:null}, uRes:{value:new THREE.Vector2(1,1)},
   uBhUv:{value:new THREE.Vector2(0.5,0.5)}, uAspect:{value:1},
-  uCA:{value:1}, uExposure:{value:1.05}, uTime:{value:0}, uGrain:{value:0.008},
+  uCA:{value:1}, uExposure:{value:1.05}, uTime:{value:0}, uGrain:{value:0.003},
+  uStreak:{value:0},
   uFlash:{value:0}, uBloomAmt:{value:0.85}, uFlareAmt:{value:0.55}
 };
 
@@ -68,6 +67,12 @@ function pass(mat, target){
 /* ---- render targets ---- */
 let rtP, rtScene, rtA, rtB, rtC, rtD;
 let bufW = 1, bufH = 1;
+const projectedOrigin = new THREE.Vector3();
+const PALETTES = {
+  gargantua: new THREE.Vector3(1.0, 0.48, 0.40),
+  ember: new THREE.Vector3(1.0, 0.33, 0.095),
+  polar: new THREE.Vector3(0.28, 0.64, 1.0)
+};
 
 function makeRT(w, h){
   return new THREE.WebGLRenderTarget(Math.max(2, w | 0), Math.max(2, h | 0), {
@@ -118,14 +123,18 @@ export function retune(fps){
    eased section preset. Neither is interpreted here beyond being written to
    uniforms: the decisions about *why* the camera is where it is belong to
    direct/camera.js, and the decisions about how it is drawn belong here. */
-export function renderFrame({ cam, look, audio, rings, time, dt }){
+export function renderFrame({ cam, look, audio, rings, time, dt, experience = {} }){
+  const features = audio.features || {};
   uBH.uCamPos.value.copy(cam.pos);
   uBH.uCamFwd.value.copy(cam.fwd);
   uBH.uCamRight.value.copy(cam.right);
   uBH.uCamUp.value.copy(cam.up);
   uBH.uTanFov.value = cam.tanFov;
-  uBH.uTime.value = time;
+  uBH.uTime.value = cam.orbT;
   uBH.uBass.value = audio.bass; uBH.uMid.value = audio.mid; uBH.uHigh.value = audio.high;
+  uBH.uPulse.value = (features.beatEnv || 0) * REDUCED;
+  uBH.uEnergy.value = features.energy || audio.level;
+  uBH.uChroma.value.lerp(PALETTES[experience.palette] || PALETTES.gargantua, 1 - Math.exp(-dt * 2.8));
   uBH.uHeat.value = look.heat * (0.45 + audio.level * 1.1);
   uBH.uJet.value = look.jet * (0.35 + audio.bass * 1.5);
   uBH.uLens.value = look.lens;
@@ -139,17 +148,20 @@ export function renderFrame({ cam, look, audio, rings, time, dt }){
   pCam.updateProjectionMatrix();
 
   // black hole screen position (the composition anchor)
-  const proj = new THREE.Vector3(0, 0, 0).project(pCam);
+  const proj = projectedOrigin.set(0, 0, 0).project(pCam);
   uBH.uBhUv.value.set(proj.x * 0.5 + 0.5, proj.y * 0.5 + 0.5);
   uFin.uBhUv.value.copy(uBH.uBhUv.value);
 
+  // Age before packing. Splicing in the uniform loop skips the ring after it.
+  for (let i = rings.length - 1; i >= 0; i--){
+    rings[i].t += dt;
+    if (rings[i].t > 2.2) rings.splice(i, 1);
+  }
   for (let i = 0; i < 5; i++){
     const r = rings[i];
     const v = uBH.uRings.value[i];
     if (r){
-      r.t += dt;
       v.set(r.t * 0.62, r.a * Math.exp(-r.t * 2.6), r.w + r.t * 0.05, 0);
-      if (r.t > 2.2) rings.splice(i, 1);
     } else v.set(0, 0, 0.02, 0);
   }
 
@@ -160,19 +172,17 @@ export function renderFrame({ cam, look, audio, rings, time, dt }){
   uP.uEcc.value = 0.14 + Math.min(0.26, Math.max(0, cam.pull) * 0.7) + audio.level * 0.06;
   uP.uEye.value.copy(cam.pos);
   uP.uSizeScale.value = Q.scale * Q.dpr * (0.85 + audio.level * 0.5);
+  uP.uChroma.value.copy(uBH.uChroma.value);
 
   uFin.uTime.value = time;
-  uFin.uCA.value = look.ca * (0.22 + audio.level * 0.6) * REDUCED;
+  uFin.uCA.value = look.ca * (0.10 + audio.level * 0.22) * REDUCED;
   uFin.uExposure.value = look.exp;
   uFin.uFlash.value = cam.flash * REDUCED;
-  uFin.uBloomAmt.value = 0.36 + audio.level * 0.28;
-  /* Restrained on purpose. A veiling flare genuinely does wash light across
-     the shadow — DNEG's own flared plate (their Figure 16) fills it to a pale
-     grey — but the film itself sits far nearer the unflared render, shadow
-     reading black with the glow felt around the disk rather than inside the
-     hole. Pushed past about a quarter this lifts the silhouette to a muddy
-     brown and the whole image loses its floor. */
-  uFin.uFlareAmt.value = 0.16 + audio.level * 0.18;
+  uFin.uBloomAmt.value = 0.26 + audio.level * 0.19;
+  uFin.uStreak.value = 0.12 + audio.high * 0.2;
+  // Artist-tuned veiling flare inspired by Figure 16, without DNEG's measured
+  // lens point-spread data. Preserve enough contrast to inspect the material.
+  uFin.uFlareAmt.value = 0.12 + audio.level * 0.09;
 
   /* --- passes --- */
   renderer.setRenderTarget(rtP);

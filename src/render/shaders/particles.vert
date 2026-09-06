@@ -1,6 +1,7 @@
 attribute vec4 aP; attribute vec3 aQ;
 uniform float uTime, uOrbT, uFlowT, uBass, uMid, uHigh, uPull, uEcc, uIsco, uSizeScale;
 uniform vec3 uEye;
+uniform vec3 uChroma;
 varying vec3 vC; varying float vI;
 float h11(float x){ return fract(sin(x * 127.1) * 43758.5453); }
 void main(){
@@ -44,12 +45,12 @@ void main(){
   vec3 c = mix(vec3(1.0, 0.30, 0.07), vec3(1.0, 0.66, 0.22), smoothstep(0.22, 0.70, temp));
   c = mix(c, vec3(1.0, 0.94, 0.84), smoothstep(0.66, 1.22, temp));
   c = mix(c, vec3(0.62, 0.80, 1.30), smoothstep(1.18, 2.10, temp));
-  vC = mix(c, vec3(1.6, 1.35, 1.1), uBass * 0.25);
+  vC = mix(uChroma, vec3(1.0, 0.97, 0.94), clamp(temp * 0.4 + uHigh * 0.3, 0.0, 0.85));
 
   // fade at both ends of the cycle hides the respawn; the radial fade
   // keeps the shimmer inside the disk so its outer edge stays clean
   // fades match the visible disk so the shimmer never extends past its rim
-  float life = smoothstep(0.0, 0.06, u) * smoothstep(1.0, 0.86, u)
+  float life = smoothstep(0.0, 0.06, u) * (1.0 - smoothstep(0.86, 1.0, u))
              * smoothstep(0.0, 0.5, rad - uIsco) * (1.0 - smoothstep(6.5, 10.0, rad));
   // a whisper at rest, shimmering with the music — the disk itself is
   // the subject, this layer only breathes with the score

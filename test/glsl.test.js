@@ -5,7 +5,7 @@
    line. Both bh.frag and final.frag include noise.glsl. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -110,5 +110,23 @@ test('no shader carries a stray backtick', async () => {
     const out = await expandIncludes(join(SHADERS, name));
     assert.ok(!out.includes('`'), `${name} contains a backtick`);
     assert.ok(!out.includes('${'), `${name} contains a template interpolation`);
+  }
+});
+
+test('smoothstep literal edges are ordered for portable GLSL behavior', async () => {
+  // GLSL leaves edge0 >= edge1 undefined. A decreasing fade must use
+  // 1.0 - smoothstep(low, high, x), even if one GPU accepts reversed edges.
+  // This guard covers literals; data-dependent edges still need review.
+  // https://registry.khronos.org/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
+  const number = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?';
+  const call = new RegExp(`\\bsmoothstep\\(\\s*(${number})\\s*,\\s*(${number})\\s*,`, 'g');
+  for (const name of await readdir(SHADERS)) {
+    if (!/\.(frag|vert|glsl)$/.test(name)) continue;
+    const source = (await expandIncludes(join(SHADERS, name)))
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+    for (const match of source.matchAll(call)) {
+      assert.ok(Number(match[1]) < Number(match[2]),
+        `${name}: smoothstep(${match[1]}, ${match[2]}, ...) has undefined edges`);
+    }
   }
 });

@@ -18,7 +18,7 @@ KERR is a single-page relativistic black hole visualiser: a geodesic raymarcher 
 | `npm run build` | Bundle `src/main.js`, inline it plus `styles.css` and `vendor/three.bundle.js` into `dist/index.html`, copy `public/`, print raw/gzip/brotli sizes. |
 | `npm run preview` | Production build, then serve `dist/`. |
 | `npm run deploy` | Check + test + build + `wrangler deploy`. |
-| `npm run icons` | Re-rasterise `public/icons/*.png` from the SVG sources. macOS only; the PNGs are committed. |
+| `npm run icons` | Generate favicon and install SVG/PNG variants from `public/logo.svg` using local Chrome. Generated assets are committed. |
 | `npm run vendor:three` | Re-bundle three.js. Only when bumping the dependency. |
 
 `npm run check` ([scripts/check.mjs](scripts/check.mjs)) is the fast gate:
@@ -99,7 +99,7 @@ Physical constants are deliberately dialled away from exact physics — Doppler 
 
 ### Build & deploy
 
-[scripts/build.mjs](scripts/build.mjs) bundles `src/main.js` with esbuild (IIFE, es2020, the GLSL plugin) and folds three exact tags in `src/index.html` into inline content: the stylesheet, the vendored three.js, and the app. `</script>` inside a payload is escaped. It fails loudly if any tag stopped matching or if an external load appears.
+[scripts/build.mjs](scripts/build.mjs) bundles `src/main.js` with esbuild (IIFE, es2020, the GLSL plugin) and folds exact tags in `src/index.html` into inline content: the stylesheet, the vendored three.js, the app, and the canonical `public/logo.svg` mark. `</script>` inside a payload is escaped. It fails loudly if any tag stopped matching or if an external load appears.
 
 Because everything is inlined, the page ships `default-src 'none'; connect-src 'none'` — it cannot make a network request at all after load. **Any change that introduces an external origin breaks `npm run check`, `npm test` and the CSP at once.**
 

@@ -122,7 +122,7 @@ test('the frame loop is drawing something that is not black', { skip: skip() }, 
 });
 
 test('the disk is rendered in its own chroma, not grey and not amber', { skip: skip() }, async () => {
-  // DISK_CHROMA is (1.00, 0.48, 0.40) — measured off the DNEG render. If the
+  // DISK_CHROMA is (1.00, 0.48, 0.40), an artistic default. If the
   // tone curve or the bloom threshold regresses, this is what shifts first.
   const hue = await page.eval(`new Promise(resolve => {
     const c = document.getElementById('gl');
@@ -169,6 +169,11 @@ test('the boot screen dismisses and the HUD comes alive', { skip: skip() }, asyn
 });
 
 test('telemetry reports live simulation state, not the static markup', { skip: skip() }, async () => {
+  // HUD telemetry is throttled. SwiftShader may draw only a handful of
+  // frames per second, so await the first real update instead of assuming
+  // the fixed boot-dismiss delay includes enough simulation frames.
+  await ctx.waitFor(() => page.eval(`parseFloat(document.getElementById('tDin').textContent) === 4.63`),
+    { timeout:15000, what:'live telemetry to replace its initial markup' });
   const t = await page.eval(`({
     spin: document.getElementById('tSpin').textContent,
     rh: document.getElementById('tRh').textContent,
@@ -200,6 +205,206 @@ test('the clock advances and the section label tracks the arrangement', { skip: 
 
   const label = await page.eval(`document.getElementById('sect').textContent`);
   assert.match(label, /^[A-Z]/, `section label looks wrong: ${label}`);
+});
+
+test('music response updates accessibly without changing listening volume', { skip: skip() }, async () => {
+  const result = await page.eval(`(() => {
+    const slider = document.getElementById('response');
+    const volume = document.getElementById('vol');
+    const before = volume.value;
+    const states = [0, 1.65, 2, 1].map(value => {
+      slider.value = value;
+      slider.dispatchEvent(new Event('input', { bubbles:true }));
+      return { value:slider.value, output:document.getElementById('responseValue').textContent,
+        spoken:slider.getAttribute('aria-valuetext') };
+    });
+    return { states, before, after:volume.value };
+  })()`);
+  assert.equal(result.before, result.after, 'visual sensitivity changed listening volume');
+  assert.deepEqual(result.states.map(s => s.output), ['0%', '165%', '200%', '100%']);
+  assert.deepEqual(result.states.map(s => s.spoken),
+    ['0 percent', '165 percent', '200 percent', '100 percent']);
+});
+
+test('focused native controls keep their keys while scene shortcuts still work', { skip: skip() }, async () => {
+  const result = await page.eval(`(() => {
+    const shot = document.getElementById('shot');
+    shot.value = 'cinematic';
+    shot.dispatchEvent(new Event('change', { bubbles:true }));
+    shot.focus();
+    const selectKey = new KeyboardEvent('keydown', { key:'2', code:'Digit2', bubbles:true, cancelable:true });
+    shot.dispatchEvent(selectKey);
+    const selectState = { value:shot.value, prevented:selectKey.defaultPrevented };
+    const response = document.getElementById('response');
+    response.focus();
+    const transport = document.getElementById('bPause');
+    const before = transport.getAttribute('aria-label');
+    const rangeKey = new KeyboardEvent('keydown', { key:' ', code:'Space', bubbles:true, cancelable:true });
+    response.dispatchEvent(rangeKey);
+    const rangeState = { before, after:transport.getAttribute('aria-label'), prevented:rangeKey.defaultPrevented };
+    response.blur();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key:'2', code:'Digit2', bubbles:true, cancelable:true }));
+    const shortcutShot = shot.value;
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key:'1', code:'Digit1', bubbles:true, cancelable:true }));
+    return { selectState, rangeState, shortcutShot, restoredShot:shot.value };
+  })()`);
+  assert.deepEqual(result.selectState, { value:'cinematic', prevented:false });
+  assert.equal(result.rangeState.before, result.rangeState.after, 'Space on sensitivity paused the music');
+  assert.equal(result.rangeState.prevented, false, 'the slider lost its native Space behavior');
+  assert.equal(result.shortcutShot, 'close', 'the scene shortcut never selected the close shot');
+  assert.equal(result.restoredShot, 'cinematic');
+});
+
+test('cinema mode moves focus to its exit and removes hidden HUD controls', { skip: skip() }, async () => {
+  const entered = await page.eval(`(() => {
+    const button = document.getElementById('bCinema');
+    button.focus(); button.click();
+    return { cinema:document.body.classList.contains('cinema'),
+      hiddenInert:document.getElementById('hud').inert,
+      pressed:button.getAttribute('aria-pressed'), focus:document.activeElement.id,
+      exitVisibility:getComputedStyle(document.getElementById('bExitCinema')).visibility };
+  })()`);
+  assert.deepEqual(entered, { cinema:true, hiddenInert:true, pressed:'true',
+    focus:'bExitCinema', exitVisibility:'visible' });
+  const exited = await page.eval(`(() => {
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {
+      key:'Escape', code:'Escape', bubbles:true, cancelable:true
+    }));
+    return { cinema:document.body.classList.contains('cinema'),
+      hiddenInert:document.getElementById('hud').inert,
+      pressed:document.getElementById('bCinema').getAttribute('aria-pressed'),
+      focus:document.activeElement.id };
+  })()`);
+  assert.deepEqual(exited, { cinema:false, hiddenInert:false, pressed:'false', focus:'bCinema' });
+});
+
+test('the help dialog contains keyboard focus and restores it on Escape', { skip: skip() }, async () => {
+  const result = await page.eval(`(() => {
+    const opener = document.getElementById('bHelp');
+    const help = document.getElementById('help');
+    opener.focus(); opener.click();
+    const opened = { focus:document.activeElement.id, hidden:help.getAttribute('aria-hidden'),
+      expanded:opener.getAttribute('aria-expanded'), inert:document.getElementById('hud').inert };
+    const controls = [...help.querySelectorAll('button, [href], select, input, [tabindex="0"]')]
+      .filter(el => !el.disabled);
+    const first = controls[0], last = controls[controls.length - 1];
+    last.focus();
+    last.dispatchEvent(new KeyboardEvent('keydown', { key:'Tab', code:'Tab', bubbles:true, cancelable:true }));
+    const wrapsForward = document.activeElement === first;
+    first.dispatchEvent(new KeyboardEvent('keydown', { key:'Tab', code:'Tab', shiftKey:true, bubbles:true, cancelable:true }));
+    const wrapsBackward = document.activeElement === last;
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', code:'Escape', bubbles:true, cancelable:true }));
+    return { opened, wrapsForward, wrapsBackward, closed: {
+      focus:document.activeElement.id, hidden:help.getAttribute('aria-hidden'),
+      expanded:opener.getAttribute('aria-expanded'), inert:document.getElementById('hud').inert
+    }};
+  })()`);
+  assert.deepEqual(result.opened, { focus:'bClose', hidden:'false', expanded:'true', inert:true });
+  assert.ok(result.wrapsForward && result.wrapsBackward, 'Tab escaped the modal');
+  assert.deepEqual(result.closed, { focus:'bHelp', hidden:'true', expanded:'false', inert:false });
+});
+
+test('a local track plays through the picker path and can return to the score', { skip: skip() }, async () => {
+  await page.eval(`(() => {
+    // A deterministic PCM tone exercises actual browser decoding, blob CSP,
+    // the file-picker callback and MediaElementAudioSource routing. No
+    // external fixture or network fetch is needed.
+    const rate = 22050, samples = rate * 2;
+    const bytes = new ArrayBuffer(44 + samples * 2), wav = new DataView(bytes);
+    const word = (offset, text) => { for (let i = 0; i < text.length; i++) wav.setUint8(offset + i, text.charCodeAt(i)); };
+    word(0, 'RIFF'); wav.setUint32(4, 36 + samples * 2, true); word(8, 'WAVE'); word(12, 'fmt ');
+    wav.setUint32(16, 16, true); wav.setUint16(20, 1, true); wav.setUint16(22, 1, true);
+    wav.setUint32(24, rate, true); wav.setUint32(28, rate * 2, true);
+    wav.setUint16(32, 2, true); wav.setUint16(34, 16, true); word(36, 'data'); wav.setUint32(40, samples * 2, true);
+    for (let i = 0; i < samples; i++) wav.setInt16(44 + i * 2, Math.sin(i * 2 * Math.PI * 220 / rate) * 6000, true);
+    const files = new DataTransfer();
+    files.items.add(new File([bytes], 'local-tone.wav', { type:'audio/wav' }));
+    const picker = document.getElementById('file');
+    picker.files = files.files;
+    picker.dispatchEvent(new Event('change', { bubbles:true }));
+  })()`);
+  await ctx.waitFor(() => page.eval(`document.getElementById('audioStatus').textContent === 'AUDIO REACTIVE'`),
+    { timeout:15000, what:'local PCM audio playback' });
+  const imported = await page.eval(`({
+    source:document.getElementById('audioSource').textContent,
+    title:document.getElementById('trackTitle').textContent,
+    duration:document.getElementById('t2').textContent,
+    scoreVisible:!document.getElementById('bScore').hidden,
+    segments:document.querySelectorAll('#map .seg').length
+  })`);
+  assert.deepEqual(imported, { source:'LOCAL AUDIO', title:'local-tone.wav', duration:'0:02', scoreVisible:true, segments:1 });
+  await page.eval(`document.getElementById('bScore').click()`);
+  await ctx.waitFor(() => page.eval(`document.getElementById('audioSource').textContent === 'GENERATIVE SCORE'`),
+    { timeout:15000, what:'original score restoration' });
+  const restored = await page.eval(`({
+    duration:document.getElementById('t2').textContent,
+    scoreHidden:document.getElementById('bScore').hidden,
+    segments:document.querySelectorAll('#map .seg').length,
+    status:document.getElementById('audioStatus').textContent
+  })`);
+  assert.deepEqual(restored, { duration:'4:00', scoreHidden:true, segments:10, status:'LIVE SYNTHESIS' });
+});
+
+test('exact edge-on and polar views retain the volume and the appropriate shadow', { skip: skip() }, async t => {
+  const views = await page.eval(`(async () => {
+    const response = document.getElementById('response');
+    response.value = 0; response.dispatchEvent(new Event('input', { bubbles:true }));
+    const palette = document.getElementById('palette');
+    palette.value = 'gargantua'; palette.dispatchEvent(new Event('change', { bubbles:true }));
+    const shot = document.getElementById('shot');
+    const canvas = document.getElementById('gl');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    const result = {};
+    for (const name of ['edge', 'top', 'under']) {
+      shot.value = name; shot.dispatchEvent(new Event('change', { bubbles:true }));
+      result[name] = await new Promise(resolve => requestAnimationFrame(() => {
+        const w = canvas.width, h = canvas.height, px = new Uint8Array(w * h * 4);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        let center = 0, centerN = 0, annulus = 0, annulusN = 0;
+        let strip = 0, stripN = 0, stripLit = 0, xx = 0, yy = 0, mass = 0;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const dx = (x + .5 - w / 2) / h, dy = (y + .5 - h / 2) / h;
+          if (Math.abs(dx) > .42 || Math.abs(dy) > .42) continue;
+          const i = (y * w + x) * 4, v = Math.max(px[i], px[i + 1], px[i + 2]);
+          const radius = Math.hypot(dx, dy);
+          if (radius < .035) { center += v; centerN++; }
+          if (radius > .11 && radius < .34) { annulus += v; annulusN++; }
+          if (Math.abs(dy) < .010 && Math.abs(dx) < .36) {
+            strip += v; stripN++; if (v > 30) stripLit++;
+          }
+          const weight = Math.max(0, v - 35);
+          mass += weight; xx += weight * dx * dx; yy += weight * dy * dy;
+        }
+        resolve({ center:center / centerN, annulus:annulus / annulusN,
+          strip:strip / stripN, stripLit:stripLit / stripN, aspect:xx / Math.max(yy, 1e-8),
+          mass, error:gl.getError() });
+      }));
+    }
+    shot.value = 'cinematic'; shot.dispatchEvent(new Event('change', { bubbles:true }));
+    response.value = 1; response.dispatchEvent(new Event('input', { bubbles:true }));
+    return result;
+  })()`);
+  t.diagnostic('cardinal framebuffer statistics: ' + JSON.stringify(views));
+  for (const [name, frame] of Object.entries(views)) {
+    assert.equal(frame.error, 0, `${name} generated a WebGL error`);
+    assert.ok(Number.isFinite(frame.aspect) && frame.mass > 10000, `${name} did not render a readable disk`);
+  }
+  // At exact edge-on incidence, the foreground volume crosses the central
+  // sightline. Erasing all emission when a ray is later captured would fail
+  // this check; an infinitely thin sign-change-only disk can also disappear.
+  assert.ok(views.edge.strip > 25 && views.edge.stripLit > .3,
+    'the foreground disk vanished when the camera entered its exact plane');
+  for (const name of ['top', 'under']) {
+    const frame = views[name];
+    assert.ok(frame.annulus > 20, `${name} lost the face of the accretion volume`);
+    assert.ok(frame.center < frame.annulus * .5,
+      `${name} filled the empty axial sightline instead of preserving the central shadow`);
+    assert.ok(frame.aspect > .60 && frame.aspect < 1.65,
+      `${name} collapsed the polar disk into an oblique stripe (moment ratio ${frame.aspect})`);
+  }
+  const ratio = views.top.annulus / views.under.annulus;
+  assert.ok(ratio > .4 && ratio < 2.5, 'one hemisphere became dark or grossly overexposed');
 });
 
 test('still no errors after interacting', { skip: skip() }, () => {

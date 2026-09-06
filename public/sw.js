@@ -1,4 +1,4 @@
-/* Service worker: offline, without staleness.
+/* Service worker: network-first with an offline shell.
  *
  * Network-first, on purpose. The whole application is one document that must
  * revalidate on every load — that is why public/_headers sets
@@ -7,14 +7,14 @@
  * get today's. So every request goes to the network first and the cache is
  * only consulted when the network is not there.
  *
- * That makes the cache pure upside: it can never serve something stale while
- * you are online, and it means the page works on a plane.
+ * Fetch still honours the HTTP cache. Icon URLs carry a version so a changed
+ * mark does not reuse the previous artwork's long-lived HTTP cache entry.
  *
  * There is very little to cache. The document carries the entire app — no JS
  * bundle, no stylesheet, no textures, no audio — so the offline story is one
  * HTML file plus the icons.
  */
-const VERSION = 'kerr-v1';
+const VERSION = 'kerr-orbit-1';
 
 /* Warmed at install so the very first offline load works even if the visitor
    never came back. Everything else is cached as it is fetched.
@@ -23,7 +23,17 @@ const VERSION = 'kerr-v1';
    the canonical /, and a redirected response cannot be written to the Cache
    API at all — that entry would fail every time. / is what the browser
    actually navigates to anyway. */
-const SHELL = ['/', '/manifest.webmanifest', '/favicon.png'];
+const SHELL = [
+  '/',
+  '/manifest.webmanifest?v=orbit-1',
+  '/favicon.png?v=orbit-1',
+  '/favicon.svg?v=orbit-1',
+  '/icon.svg?v=orbit-1',
+  '/icons/icon-192.png?v=orbit-1',
+  '/icons/icon-512.png?v=orbit-1',
+  '/icons/icon-maskable-512.png?v=orbit-1',
+  '/icons/apple-touch-icon.png?v=orbit-1',
+];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

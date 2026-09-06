@@ -1,0 +1,2297 @@
+{
+  "generatedAt": "2026-09-06T11:25:53.284Z",
+  "rendererRequested": "available hardware",
+  "deviceScaleFactor": 1,
+  "reducedMotion": false,
+  "caveat": "Viewport and touch emulation on local Chrome; these are not physical-device or sustained-performance measurements.",
+  "captures": [
+    {
+      "file": "kerr-desktop-cinema.png",
+      "requested": {
+        "name": "desktop-cinema",
+        "width": 1440,
+        "height": 900,
+        "cinema": true
+      },
+      "capturedAt": "2026-09-06T11:26:00.027Z",
+      "dimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "bytes": 547639,
+      "sha256": "91f3ab2c6f4f2759d0df65c5dfe74f029183f429b75ef43d131bae68b310c1b9",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 1440,
+          "height": 900
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 1440,
+          "height": 900,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 1440,
+          "height": 900,
+          "scale": 1
+        },
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "touch": false,
+        "reducedMotion": false,
+        "bodyClass": "cinema",
+        "controls": [
+          {
+            "id": "bExitCinema",
+            "tag": "BUTTON",
+            "x": 1245.421875,
+            "y": 835,
+            "width": 148.5,
+            "height": 40,
+            "right": 1393.921875,
+            "bottom": 875,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {},
+        "hiddenControls": [
+          {
+            "id": "shot",
+            "reason": "hidden or inert",
+            "x": 108.078125,
+            "y": 170.796875,
+            "width": 128,
+            "height": 30,
+            "right": 236.078125,
+            "bottom": 200.796875
+          },
+          {
+            "id": "palette",
+            "reason": "hidden or inert",
+            "x": 108.078125,
+            "y": 219.796875,
+            "width": 128,
+            "height": 30,
+            "right": 236.078125,
+            "bottom": 249.796875
+          },
+          {
+            "id": "response",
+            "reason": "hidden or inert",
+            "x": 46.078125,
+            "y": 293.796875,
+            "width": 190,
+            "height": 24,
+            "right": 236.078125,
+            "bottom": 317.796875
+          },
+          {
+            "id": "bReset",
+            "reason": "hidden or inert",
+            "x": 46.078125,
+            "y": 323.796875,
+            "width": 190,
+            "height": 34,
+            "right": 236.078125,
+            "bottom": 357.796875
+          },
+          {
+            "id": "bView",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bCinema",
+            "reason": "hidden or inert",
+            "x": 1134.53125,
+            "y": 28,
+            "width": 89.984375,
+            "height": 38,
+            "right": 1224.515625,
+            "bottom": 66
+          },
+          {
+            "id": "bFull",
+            "reason": "hidden or inert",
+            "x": 1231.515625,
+            "y": 28,
+            "width": 117.40625,
+            "height": 38,
+            "right": 1348.921875,
+            "bottom": 66
+          },
+          {
+            "id": "bHelp",
+            "reason": "hidden or inert",
+            "x": 1355.921875,
+            "y": 28,
+            "width": 38,
+            "height": 38,
+            "right": 1393.921875,
+            "bottom": 66
+          },
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bLoad",
+            "reason": "hidden or inert",
+            "x": 1098.703125,
+            "y": 750,
+            "width": 105.46875,
+            "height": 36,
+            "right": 1204.171875,
+            "bottom": 786
+          },
+          {
+            "id": "bVoice",
+            "reason": "hidden or inert",
+            "x": 1211.171875,
+            "y": 750,
+            "width": 78,
+            "height": 36,
+            "right": 1289.171875,
+            "bottom": 786
+          },
+          {
+            "id": "vol",
+            "reason": "hidden or inert",
+            "x": 1327.921875,
+            "y": 757,
+            "width": 66,
+            "height": 22,
+            "right": 1393.921875,
+            "bottom": 779
+          },
+          {
+            "id": "bPause",
+            "reason": "hidden or inert",
+            "x": 46.078125,
+            "y": 834,
+            "width": 42,
+            "height": 42,
+            "right": 88.078125,
+            "bottom": 876
+          },
+          {
+            "id": "map",
+            "reason": "hidden or inert",
+            "x": 105.078125,
+            "y": 839,
+            "width": 1198.84375,
+            "height": 32,
+            "right": 1303.921875,
+            "bottom": 871
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 516,
+            "y": 681.375,
+            "width": 408,
+            "height": 33,
+            "right": 924,
+            "bottom": 714.375
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 56.078125,
+            "y": 542.7714233398438,
+            "width": 398,
+            "height": 54,
+            "right": 454.078125,
+            "bottom": 596.7714233398438
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 56.078125,
+            "y": 596.7714233398438,
+            "width": 398,
+            "height": 42,
+            "right": 454.078125,
+            "bottom": 638.7714233398438
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 56.078125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 153.328125,
+            "bottom": 710.7714233398438
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 156.328125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 253.578125,
+            "bottom": 710.7714233398438
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 256.578125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 353.828125,
+            "bottom": 710.7714233398438
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 356.828125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 454.078125,
+            "bottom": 710.7714233398438
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "kerr-desktop-interface.png",
+      "requested": {
+        "name": "desktop-interface",
+        "width": 1440,
+        "height": 900
+      },
+      "capturedAt": "2026-09-06T11:26:06.043Z",
+      "dimensions": {
+        "width": 1440,
+        "height": 900
+      },
+      "bytes": 513997,
+      "sha256": "722d5d3a3e35a74b323b30b14639870d5bd3279fe13b130318fac0ae26491388",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 1440,
+          "height": 900
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 1440,
+          "height": 900,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 1440,
+          "height": 900,
+          "scale": 1
+        },
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "touch": false,
+        "reducedMotion": false,
+        "bodyClass": "",
+        "controls": [
+          {
+            "id": "shot",
+            "tag": "SELECT",
+            "x": 108.078125,
+            "y": 170.796875,
+            "width": 128,
+            "height": 30,
+            "right": 236.078125,
+            "bottom": 200.796875,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "palette",
+            "tag": "SELECT",
+            "x": 108.078125,
+            "y": 219.796875,
+            "width": 128,
+            "height": 30,
+            "right": 236.078125,
+            "bottom": 249.796875,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "response",
+            "tag": "INPUT",
+            "x": 46.078125,
+            "y": 293.796875,
+            "width": 190,
+            "height": 24,
+            "right": 236.078125,
+            "bottom": 317.796875,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bReset",
+            "tag": "BUTTON",
+            "x": 46.078125,
+            "y": 323.796875,
+            "width": 190,
+            "height": 34,
+            "right": 236.078125,
+            "bottom": 357.796875,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bCinema",
+            "tag": "BUTTON",
+            "x": 1134.53125,
+            "y": 28,
+            "width": 89.984375,
+            "height": 38,
+            "right": 1224.515625,
+            "bottom": 66,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bFull",
+            "tag": "BUTTON",
+            "x": 1231.515625,
+            "y": 28,
+            "width": 117.40625,
+            "height": 38,
+            "right": 1348.921875,
+            "bottom": 66,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bHelp",
+            "tag": "BUTTON",
+            "x": 1355.921875,
+            "y": 28,
+            "width": 38,
+            "height": 38,
+            "right": 1393.921875,
+            "bottom": 66,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bLoad",
+            "tag": "BUTTON",
+            "x": 1098.703125,
+            "y": 750,
+            "width": 105.46875,
+            "height": 36,
+            "right": 1204.171875,
+            "bottom": 786,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bVoice",
+            "tag": "BUTTON",
+            "x": 1211.171875,
+            "y": 750,
+            "width": 78,
+            "height": 36,
+            "right": 1289.171875,
+            "bottom": 786,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "vol",
+            "tag": "INPUT",
+            "x": 1327.921875,
+            "y": 757,
+            "width": 66,
+            "height": 22,
+            "right": 1393.921875,
+            "bottom": 779,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bPause",
+            "tag": "BUTTON",
+            "x": 46.078125,
+            "y": 834,
+            "width": 42,
+            "height": 42,
+            "right": 88.078125,
+            "bottom": 876,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "map",
+            "tag": "DIV",
+            "x": 105.078125,
+            "y": 839,
+            "width": 1198.84375,
+            "height": 32,
+            "right": 1303.921875,
+            "bottom": 871,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {
+          ".identity": {
+            "x": 46.078125,
+            "y": 28,
+            "width": 246.28125,
+            "height": 35,
+            "right": 292.359375,
+            "bottom": 63,
+            "scrollWidth": 246,
+            "clientWidth": 246,
+            "scrollHeight": 35,
+            "clientHeight": 35
+          },
+          ".tr": {
+            "x": 1134.53125,
+            "y": 28,
+            "width": 259.390625,
+            "height": 38,
+            "right": 1393.921875,
+            "bottom": 66,
+            "scrollWidth": 259,
+            "clientWidth": 259,
+            "scrollHeight": 38,
+            "clientHeight": 38
+          },
+          ".scene-controls": {
+            "x": 46.078125,
+            "y": 132,
+            "width": 190,
+            "height": 239.796875,
+            "right": 236.078125,
+            "bottom": 371.796875,
+            "scrollWidth": 190,
+            "clientWidth": 190,
+            "scrollHeight": 240,
+            "clientHeight": 240
+          },
+          ".deck": {
+            "x": 46.078125,
+            "y": 730,
+            "width": 1347.84375,
+            "height": 146,
+            "right": 1393.921875,
+            "bottom": 876,
+            "scrollWidth": 1348,
+            "clientWidth": 1348,
+            "scrollHeight": 145,
+            "clientHeight": 145
+          }
+        },
+        "hiddenControls": [
+          {
+            "id": "bView",
+            "reason": "bView: none/visible/1",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bExitCinema",
+            "reason": "hidden or inert",
+            "x": 1245.421875,
+            "y": 835,
+            "width": 148.5,
+            "height": 40,
+            "right": 1393.921875,
+            "bottom": 875
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 516,
+            "y": 681.375,
+            "width": 408,
+            "height": 33,
+            "right": 924,
+            "bottom": 714.375
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 56.078125,
+            "y": 542.7714233398438,
+            "width": 398,
+            "height": 54,
+            "right": 454.078125,
+            "bottom": 596.7714233398438
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 56.078125,
+            "y": 596.7714233398438,
+            "width": 398,
+            "height": 42,
+            "right": 454.078125,
+            "bottom": 638.7714233398438
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 56.078125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 153.328125,
+            "bottom": 710.7714233398438
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 156.328125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 253.578125,
+            "bottom": 710.7714233398438
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 256.578125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 353.828125,
+            "bottom": 710.7714233398438
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 356.828125,
+            "y": 679.7714233398438,
+            "width": 97.25,
+            "height": 31,
+            "right": 454.078125,
+            "bottom": 710.7714233398438
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "kerr-tablet-portrait.png",
+      "requested": {
+        "name": "tablet-portrait",
+        "width": 768,
+        "height": 1024,
+        "touch": true
+      },
+      "capturedAt": "2026-09-06T11:26:11.981Z",
+      "dimensions": {
+        "width": 768,
+        "height": 1024
+      },
+      "bytes": 275537,
+      "sha256": "888f8920a863fbbde24bf985a9d44c32e7e54e2188e1e57b2bb35d9d6041bc72",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 768,
+          "height": 1024
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 768,
+          "height": 1024,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 768,
+          "height": 1024,
+          "scale": 1
+        },
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "touch": true,
+        "reducedMotion": false,
+        "bodyClass": "",
+        "controls": [
+          {
+            "id": "bView",
+            "tag": "BUTTON",
+            "x": 498.734375,
+            "y": 20,
+            "width": 74.640625,
+            "height": 44,
+            "right": 573.375,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bCinema",
+            "tag": "BUTTON",
+            "x": 579.375,
+            "y": 20,
+            "width": 66.625,
+            "height": 44,
+            "right": 646,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bFull",
+            "tag": "BUTTON",
+            "x": 652,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 696,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bHelp",
+            "tag": "BUTTON",
+            "x": 702,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 746,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bLoad",
+            "tag": "BUTTON",
+            "x": 22,
+            "y": 879,
+            "width": 103.46875,
+            "height": 44,
+            "right": 125.46875,
+            "bottom": 923,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bVoice",
+            "tag": "BUTTON",
+            "x": 132.46875,
+            "y": 879,
+            "width": 78,
+            "height": 44,
+            "right": 210.46875,
+            "bottom": 923,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "vol",
+            "tag": "INPUT",
+            "x": 656,
+            "y": 879,
+            "width": 90,
+            "height": 44,
+            "right": 746,
+            "bottom": 923,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bPause",
+            "tag": "BUTTON",
+            "x": 22,
+            "y": 962,
+            "width": 44,
+            "height": 44,
+            "right": 66,
+            "bottom": 1006,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "map",
+            "tag": "DIV",
+            "x": 78,
+            "y": 962,
+            "width": 595,
+            "height": 44,
+            "right": 673,
+            "bottom": 1006,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {
+          ".identity": {
+            "x": 22,
+            "y": 22,
+            "width": 122.984375,
+            "height": 30,
+            "right": 144.984375,
+            "bottom": 52,
+            "scrollWidth": 123,
+            "clientWidth": 123,
+            "scrollHeight": 30,
+            "clientHeight": 30
+          },
+          ".tr": {
+            "x": 498.734375,
+            "y": 20,
+            "width": 247.265625,
+            "height": 44,
+            "right": 746,
+            "bottom": 64,
+            "scrollWidth": 247,
+            "clientWidth": 247,
+            "scrollHeight": 44,
+            "clientHeight": 44
+          },
+          ".deck": {
+            "x": 22,
+            "y": 810.5,
+            "width": 724,
+            "height": 195.5,
+            "right": 746,
+            "bottom": 1006,
+            "scrollWidth": 724,
+            "clientWidth": 724,
+            "scrollHeight": 195,
+            "clientHeight": 195
+          }
+        },
+        "hiddenControls": [
+          {
+            "id": "shot",
+            "reason": "hidden or inert",
+            "x": 562,
+            "y": 127.390625,
+            "width": 160,
+            "height": 44,
+            "right": 722,
+            "bottom": 171.390625
+          },
+          {
+            "id": "palette",
+            "reason": "hidden or inert",
+            "x": 562,
+            "y": 190.390625,
+            "width": 160,
+            "height": 44,
+            "right": 722,
+            "bottom": 234.390625
+          },
+          {
+            "id": "response",
+            "reason": "hidden or inert",
+            "x": 470,
+            "y": 281.390625,
+            "width": 252,
+            "height": 44,
+            "right": 722,
+            "bottom": 325.390625
+          },
+          {
+            "id": "bReset",
+            "reason": "hidden or inert",
+            "x": 470,
+            "y": 335.390625,
+            "width": 252,
+            "height": 44,
+            "right": 722,
+            "bottom": 379.390625
+          },
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bExitCinema",
+            "reason": "hidden or inert",
+            "x": 597.5,
+            "y": 955,
+            "width": 148.5,
+            "height": 44,
+            "right": 746,
+            "bottom": 999
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 168,
+            "y": 736.71875,
+            "width": 432,
+            "height": 44,
+            "right": 600,
+            "bottom": 780.71875
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 22,
+            "y": 763,
+            "width": 520,
+            "height": 54,
+            "right": 542,
+            "bottom": 817
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 22,
+            "y": 817,
+            "width": 520,
+            "height": 44,
+            "right": 542,
+            "bottom": 861
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 22,
+            "y": 891,
+            "width": 127.75,
+            "height": 44,
+            "right": 149.75,
+            "bottom": 935
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 152.75,
+            "y": 891,
+            "width": 127.75,
+            "height": 44,
+            "right": 280.5,
+            "bottom": 935
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 283.5,
+            "y": 891,
+            "width": 127.75,
+            "height": 44,
+            "right": 411.25,
+            "bottom": 935
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 414.25,
+            "y": 891,
+            "width": 127.75,
+            "height": 44,
+            "right": 542,
+            "bottom": 935
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "kerr-mobile-portrait.png",
+      "requested": {
+        "name": "mobile-portrait",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "capturedAt": "2026-09-06T11:26:17.920Z",
+      "dimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "bytes": 120112,
+      "sha256": "9768345457148573bb8c9da28f95541c84838122193502fdd64cb1e260eda629",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 390,
+          "height": 844
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "touch": true,
+        "reducedMotion": false,
+        "bodyClass": "",
+        "controls": [
+          {
+            "id": "bView",
+            "tag": "BUTTON",
+            "x": 147.875,
+            "y": 20,
+            "width": 64.5625,
+            "height": 44,
+            "right": 212.4375,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bCinema",
+            "tag": "BUTTON",
+            "x": 217.4375,
+            "y": 20,
+            "width": 56.5625,
+            "height": 44,
+            "right": 274,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bFull",
+            "tag": "BUTTON",
+            "x": 279,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 323,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bHelp",
+            "tag": "BUTTON",
+            "x": 328,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 372,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bLoad",
+            "tag": "BUTTON",
+            "x": 18,
+            "y": 699,
+            "width": 93.625,
+            "height": 44,
+            "right": 111.625,
+            "bottom": 743,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bVoice",
+            "tag": "BUTTON",
+            "x": 118.625,
+            "y": 699,
+            "width": 68,
+            "height": 44,
+            "right": 186.625,
+            "bottom": 743,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "vol",
+            "tag": "INPUT",
+            "x": 292,
+            "y": 699,
+            "width": 80,
+            "height": 44,
+            "right": 372,
+            "bottom": 743,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bPause",
+            "tag": "BUTTON",
+            "x": 18,
+            "y": 782,
+            "width": 44,
+            "height": 44,
+            "right": 62,
+            "bottom": 826,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "map",
+            "tag": "DIV",
+            "x": 74,
+            "y": 782,
+            "width": 225,
+            "height": 44,
+            "right": 299,
+            "bottom": 826,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {
+          ".identity": {
+            "x": 18,
+            "y": 22,
+            "width": 106.171875,
+            "height": 26,
+            "right": 124.171875,
+            "bottom": 48,
+            "scrollWidth": 106,
+            "clientWidth": 106,
+            "scrollHeight": 26,
+            "clientHeight": 26
+          },
+          ".tr": {
+            "x": 147.875,
+            "y": 20,
+            "width": 224.125,
+            "height": 44,
+            "right": 372,
+            "bottom": 64,
+            "scrollWidth": 224,
+            "clientWidth": 224,
+            "scrollHeight": 44,
+            "clientHeight": 44
+          },
+          ".deck": {
+            "x": 18,
+            "y": 635,
+            "width": 354,
+            "height": 191,
+            "right": 372,
+            "bottom": 826,
+            "scrollWidth": 354,
+            "clientWidth": 354,
+            "scrollHeight": 190,
+            "clientHeight": 190
+          }
+        },
+        "hiddenControls": [
+          {
+            "id": "shot",
+            "reason": "hidden or inert",
+            "x": 188,
+            "y": 127.390625,
+            "width": 160,
+            "height": 44,
+            "right": 348,
+            "bottom": 171.390625
+          },
+          {
+            "id": "palette",
+            "reason": "hidden or inert",
+            "x": 188,
+            "y": 190.390625,
+            "width": 160,
+            "height": 44,
+            "right": 348,
+            "bottom": 234.390625
+          },
+          {
+            "id": "response",
+            "reason": "hidden or inert",
+            "x": 96,
+            "y": 281.390625,
+            "width": 252,
+            "height": 44,
+            "right": 348,
+            "bottom": 325.390625
+          },
+          {
+            "id": "bReset",
+            "reason": "hidden or inert",
+            "x": 96,
+            "y": 335.390625,
+            "width": 252,
+            "height": 44,
+            "right": 348,
+            "bottom": 379.390625
+          },
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bExitCinema",
+            "reason": "hidden or inert",
+            "x": 223.5,
+            "y": 775,
+            "width": 148.5,
+            "height": 44,
+            "right": 372,
+            "bottom": 819
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 42,
+            "y": 655.421875,
+            "width": 306,
+            "height": 44,
+            "right": 348,
+            "bottom": 699.421875
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 18,
+            "y": 583,
+            "width": 354,
+            "height": 54,
+            "right": 372,
+            "bottom": 637
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 18,
+            "y": 637,
+            "width": 354,
+            "height": 44,
+            "right": 372,
+            "bottom": 681
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 18,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 104.25,
+            "bottom": 755
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 107.25,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 193.5,
+            "bottom": 755
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 196.5,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 282.75,
+            "bottom": 755
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 285.75,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 372,
+            "bottom": 755
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "kerr-mobile-landscape.png",
+      "requested": {
+        "name": "mobile-landscape",
+        "width": 844,
+        "height": 390,
+        "touch": true
+      },
+      "capturedAt": "2026-09-06T11:26:23.809Z",
+      "dimensions": {
+        "width": 844,
+        "height": 390
+      },
+      "bytes": 119055,
+      "sha256": "21795b116af708a0c22b91d9a499067afaaac61c76498e6ad0d4df9870582c46",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 844,
+          "height": 390
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 844,
+          "height": 390,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 844,
+          "height": 390,
+          "scale": 1
+        },
+        "scrollWidth": 844,
+        "clientWidth": 844,
+        "touch": true,
+        "reducedMotion": false,
+        "bodyClass": "",
+        "controls": [
+          {
+            "id": "bView",
+            "tag": "BUTTON",
+            "x": 572.734375,
+            "y": 12,
+            "width": 74.640625,
+            "height": 44,
+            "right": 647.375,
+            "bottom": 56,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bCinema",
+            "tag": "BUTTON",
+            "x": 653.375,
+            "y": 12,
+            "width": 66.625,
+            "height": 44,
+            "right": 720,
+            "bottom": 56,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bFull",
+            "tag": "BUTTON",
+            "x": 726,
+            "y": 12,
+            "width": 44,
+            "height": 44,
+            "right": 770,
+            "bottom": 56,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bHelp",
+            "tag": "BUTTON",
+            "x": 776,
+            "y": 12,
+            "width": 44,
+            "height": 44,
+            "right": 820,
+            "bottom": 56,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bLoad",
+            "tag": "BUTTON",
+            "x": 585.375,
+            "y": 286,
+            "width": 91.625,
+            "height": 44,
+            "right": 677,
+            "bottom": 330,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bVoice",
+            "tag": "BUTTON",
+            "x": 683,
+            "y": 286,
+            "width": 66,
+            "height": 44,
+            "right": 749,
+            "bottom": 330,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "vol",
+            "tag": "INPUT",
+            "x": 758,
+            "y": 286,
+            "width": 62,
+            "height": 44,
+            "right": 820,
+            "bottom": 330,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bPause",
+            "tag": "BUTTON",
+            "x": 24,
+            "y": 336,
+            "width": 44,
+            "height": 44,
+            "right": 68,
+            "bottom": 380,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "map",
+            "tag": "DIV",
+            "x": 79,
+            "y": 336,
+            "width": 490.375,
+            "height": 44,
+            "right": 569.375,
+            "bottom": 380,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {
+          ".identity": {
+            "x": 24,
+            "y": 14,
+            "width": 109.171875,
+            "height": 27,
+            "right": 133.171875,
+            "bottom": 41,
+            "scrollWidth": 109,
+            "clientWidth": 109,
+            "scrollHeight": 27,
+            "clientHeight": 27
+          },
+          ".tr": {
+            "x": 572.734375,
+            "y": 12,
+            "width": 247.265625,
+            "height": 44,
+            "right": 820,
+            "bottom": 56,
+            "scrollWidth": 247,
+            "clientWidth": 247,
+            "scrollHeight": 44,
+            "clientHeight": 44
+          },
+          ".deck": {
+            "x": 24,
+            "y": 277,
+            "width": 796,
+            "height": 103,
+            "right": 820,
+            "bottom": 380,
+            "scrollWidth": 796,
+            "clientWidth": 796,
+            "scrollHeight": 102,
+            "clientHeight": 102
+          }
+        },
+        "hiddenControls": [
+          {
+            "id": "shot",
+            "reason": "hidden or inert",
+            "x": 639,
+            "y": 103.390625,
+            "width": 160,
+            "height": 44,
+            "right": 799,
+            "bottom": 147.390625
+          },
+          {
+            "id": "palette",
+            "reason": "hidden or inert",
+            "x": 639,
+            "y": 166.390625,
+            "width": 160,
+            "height": 44,
+            "right": 799,
+            "bottom": 210.390625
+          },
+          {
+            "id": "response",
+            "reason": "hidden or inert",
+            "x": 561,
+            "y": 257.390625,
+            "width": 238,
+            "height": 44,
+            "right": 799,
+            "bottom": 301.390625
+          },
+          {
+            "id": "bReset",
+            "reason": "hidden or inert",
+            "x": 561,
+            "y": 311.390625,
+            "width": 238,
+            "height": 44,
+            "right": 799,
+            "bottom": 355.390625
+          },
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bExitCinema",
+            "reason": "hidden or inert",
+            "x": 671.5,
+            "y": 321,
+            "width": 148.5,
+            "height": 44,
+            "right": 820,
+            "bottom": 365
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 211,
+            "y": 311,
+            "width": 422,
+            "height": 44,
+            "right": 633,
+            "bottom": 355
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 24,
+            "y": 236.109375,
+            "width": 344,
+            "height": 46,
+            "right": 368,
+            "bottom": 282.109375
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 24,
+            "y": 282.109375,
+            "width": 344,
+            "height": 44,
+            "right": 368,
+            "bottom": 326.109375
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "kerr-mobile-small.png",
+      "requested": {
+        "name": "mobile-small",
+        "width": 360,
+        "height": 640,
+        "touch": true
+      },
+      "capturedAt": "2026-09-06T11:26:29.702Z",
+      "dimensions": {
+        "width": 360,
+        "height": 640
+      },
+      "bytes": 106420,
+      "sha256": "057f7aff325fd3006268b95b59783f4b899b58c795a3586baee3d34d6d1da6e3",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 360,
+          "height": 640
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 360,
+          "height": 640,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 360,
+          "height": 640,
+          "scale": 1
+        },
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "touch": true,
+        "reducedMotion": false,
+        "bodyClass": "",
+        "controls": [
+          {
+            "id": "bView",
+            "tag": "BUTTON",
+            "x": 180.875,
+            "y": 20,
+            "width": 60.5625,
+            "height": 44,
+            "right": 241.4375,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bCinema",
+            "tag": "BUTTON",
+            "x": 245.4375,
+            "y": 20,
+            "width": 52.5625,
+            "height": 44,
+            "right": 298,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bHelp",
+            "tag": "BUTTON",
+            "x": 302,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 346,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bLoad",
+            "tag": "BUTTON",
+            "x": 14,
+            "y": 495,
+            "width": 91.625,
+            "height": 44,
+            "right": 105.625,
+            "bottom": 539,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bVoice",
+            "tag": "BUTTON",
+            "x": 110.625,
+            "y": 495,
+            "width": 68,
+            "height": 44,
+            "right": 178.625,
+            "bottom": 539,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "vol",
+            "tag": "INPUT",
+            "x": 282,
+            "y": 495,
+            "width": 64,
+            "height": 44,
+            "right": 346,
+            "bottom": 539,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bPause",
+            "tag": "BUTTON",
+            "x": 14,
+            "y": 578,
+            "width": 44,
+            "height": 44,
+            "right": 58,
+            "bottom": 622,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "map",
+            "tag": "DIV",
+            "x": 70,
+            "y": 578,
+            "width": 203,
+            "height": 44,
+            "right": 273,
+            "bottom": 622,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {
+          ".identity": {
+            "x": 14,
+            "y": 22,
+            "width": 92.625,
+            "height": 24,
+            "right": 106.625,
+            "bottom": 46,
+            "scrollWidth": 93,
+            "clientWidth": 93,
+            "scrollHeight": 24,
+            "clientHeight": 24
+          },
+          ".tr": {
+            "x": 180.875,
+            "y": 20,
+            "width": 165.125,
+            "height": 44,
+            "right": 346,
+            "bottom": 64,
+            "scrollWidth": 165,
+            "clientWidth": 165,
+            "scrollHeight": 44,
+            "clientHeight": 44
+          },
+          ".deck": {
+            "x": 14,
+            "y": 434,
+            "width": 332,
+            "height": 188,
+            "right": 346,
+            "bottom": 622,
+            "scrollWidth": 332,
+            "clientWidth": 332,
+            "scrollHeight": 187,
+            "clientHeight": 187
+          }
+        },
+        "hiddenControls": [
+          {
+            "id": "shot",
+            "reason": "hidden or inert",
+            "x": 162,
+            "y": 127.390625,
+            "width": 160,
+            "height": 44,
+            "right": 322,
+            "bottom": 171.390625
+          },
+          {
+            "id": "palette",
+            "reason": "hidden or inert",
+            "x": 162,
+            "y": 190.390625,
+            "width": 160,
+            "height": 44,
+            "right": 322,
+            "bottom": 234.390625
+          },
+          {
+            "id": "response",
+            "reason": "hidden or inert",
+            "x": 70,
+            "y": 281.390625,
+            "width": 252,
+            "height": 44,
+            "right": 322,
+            "bottom": 325.390625
+          },
+          {
+            "id": "bReset",
+            "reason": "hidden or inert",
+            "x": 70,
+            "y": 335.390625,
+            "width": 252,
+            "height": 44,
+            "right": 322,
+            "bottom": 379.390625
+          },
+          {
+            "id": "bFull",
+            "reason": "bFull: none/visible/1",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bExitCinema",
+            "reason": "hidden or inert",
+            "x": 197.5,
+            "y": 571,
+            "width": 148.5,
+            "height": 44,
+            "right": 346,
+            "bottom": 615
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 42,
+            "y": 552,
+            "width": 276,
+            "height": 44,
+            "right": 318,
+            "bottom": 596
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 14,
+            "y": 490.5,
+            "width": 332,
+            "height": 48,
+            "right": 346,
+            "bottom": 538.5
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 14,
+            "y": 538.5,
+            "width": 332,
+            "height": 44,
+            "right": 346,
+            "bottom": 582.5
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "file": "kerr-mobile-controls.png",
+      "requested": {
+        "name": "mobile-controls",
+        "width": 390,
+        "height": 844,
+        "touch": true,
+        "viewPanel": true
+      },
+      "capturedAt": "2026-09-06T11:26:35.635Z",
+      "dimensions": {
+        "width": 390,
+        "height": 844
+      },
+      "bytes": 80084,
+      "sha256": "0931f784e4fd557e51257fe909fbc00c865a3392f93d966c46bbc57c132c4268",
+      "telemetry": {
+        "clock": "0:35",
+        "section": "ASCENT",
+        "quality": "220 / 0.92",
+        "shot": "cinematic",
+        "palette": "gargantua",
+        "response": "1",
+        "canvas": {
+          "width": 390,
+          "height": 844
+        },
+        "glError": 0,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)"
+      },
+      "layout": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "dpr": 1
+        },
+        "visualViewport": {
+          "width": 390,
+          "height": 844,
+          "scale": 1
+        },
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "touch": true,
+        "reducedMotion": false,
+        "bodyClass": "scene-open",
+        "controls": [
+          {
+            "id": "shot",
+            "tag": "SELECT",
+            "x": 188,
+            "y": 134.390625,
+            "width": 160,
+            "height": 44,
+            "right": 348,
+            "bottom": 178.390625,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "palette",
+            "tag": "SELECT",
+            "x": 188,
+            "y": 197.390625,
+            "width": 160,
+            "height": 44,
+            "right": 348,
+            "bottom": 241.390625,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "response",
+            "tag": "INPUT",
+            "x": 96,
+            "y": 288.390625,
+            "width": 252,
+            "height": 44,
+            "right": 348,
+            "bottom": 332.390625,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bReset",
+            "tag": "BUTTON",
+            "x": 96,
+            "y": 342.390625,
+            "width": 252,
+            "height": 44,
+            "right": 348,
+            "bottom": 386.390625,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bView",
+            "tag": "BUTTON",
+            "x": 147.875,
+            "y": 20,
+            "width": 64.5625,
+            "height": 44,
+            "right": 212.4375,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bCinema",
+            "tag": "BUTTON",
+            "x": 217.4375,
+            "y": 20,
+            "width": 56.5625,
+            "height": 44,
+            "right": 274,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bFull",
+            "tag": "BUTTON",
+            "x": 279,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 323,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bHelp",
+            "tag": "BUTTON",
+            "x": 328,
+            "y": 20,
+            "width": 44,
+            "height": 44,
+            "right": 372,
+            "bottom": 64,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bLoad",
+            "tag": "BUTTON",
+            "x": 18,
+            "y": 699,
+            "width": 93.625,
+            "height": 44,
+            "right": 111.625,
+            "bottom": 743,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bVoice",
+            "tag": "BUTTON",
+            "x": 118.625,
+            "y": 699,
+            "width": 68,
+            "height": 44,
+            "right": 186.625,
+            "bottom": 743,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "vol",
+            "tag": "INPUT",
+            "x": 292,
+            "y": 699,
+            "width": 80,
+            "height": 44,
+            "right": 372,
+            "bottom": 743,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "bPause",
+            "tag": "BUTTON",
+            "x": 18,
+            "y": 782,
+            "width": 44,
+            "height": 44,
+            "right": 62,
+            "bottom": 826,
+            "hit": true,
+            "disabled": false
+          },
+          {
+            "id": "map",
+            "tag": "DIV",
+            "x": 74,
+            "y": 782,
+            "width": 225,
+            "height": 44,
+            "right": 299,
+            "bottom": 826,
+            "hit": true,
+            "disabled": false
+          }
+        ],
+        "regions": {
+          ".identity": {
+            "x": 18,
+            "y": 22,
+            "width": 106.171875,
+            "height": 26,
+            "right": 124.171875,
+            "bottom": 48,
+            "scrollWidth": 106,
+            "clientWidth": 106,
+            "scrollHeight": 26,
+            "clientHeight": 26
+          },
+          ".tr": {
+            "x": 147.875,
+            "y": 20,
+            "width": 224.125,
+            "height": 44,
+            "right": 372,
+            "bottom": 64,
+            "scrollWidth": 224,
+            "clientWidth": 224,
+            "scrollHeight": 44,
+            "clientHeight": 44
+          },
+          ".scene-controls": {
+            "x": 72,
+            "y": 80,
+            "width": 300,
+            "height": 328.390625,
+            "right": 372,
+            "bottom": 408.390625,
+            "scrollWidth": 298,
+            "clientWidth": 298,
+            "scrollHeight": 326,
+            "clientHeight": 326
+          },
+          ".deck": {
+            "x": 18,
+            "y": 635,
+            "width": 354,
+            "height": 191,
+            "right": 372,
+            "bottom": 826,
+            "scrollWidth": 354,
+            "clientWidth": 354,
+            "scrollHeight": 190,
+            "clientHeight": 190
+          }
+        },
+        "hiddenControls": [
+          {
+            "id": "bScore",
+            "reason": "hidden or inert",
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "id": "bExitCinema",
+            "reason": "hidden or inert",
+            "x": 223.5,
+            "y": 775,
+            "width": 148.5,
+            "height": 44,
+            "right": 372,
+            "bottom": 819
+          },
+          {
+            "id": "bClose",
+            "reason": "hidden or inert",
+            "x": 42,
+            "y": 655.421875,
+            "width": 306,
+            "height": 44,
+            "right": 348,
+            "bottom": 699.421875
+          },
+          {
+            "id": "go",
+            "reason": "hidden or inert",
+            "x": 18,
+            "y": 583,
+            "width": 354,
+            "height": 54,
+            "right": 372,
+            "bottom": 637
+          },
+          {
+            "id": "own",
+            "reason": "hidden or inert",
+            "x": 18,
+            "y": 637,
+            "width": 354,
+            "height": 44,
+            "right": 372,
+            "bottom": 681
+          },
+          {
+            "id": "auto",
+            "reason": "hidden or inert",
+            "x": 18,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 104.25,
+            "bottom": 755
+          },
+          {
+            "id": "laptop",
+            "reason": "hidden or inert",
+            "x": 107.25,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 193.5,
+            "bottom": 755
+          },
+          {
+            "id": "monitors",
+            "reason": "hidden or inert",
+            "x": 196.5,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 282.75,
+            "bottom": 755
+          },
+          {
+            "id": "phones",
+            "reason": "hidden or inert",
+            "x": 285.75,
+            "y": 711,
+            "width": 86.25,
+            "height": 44,
+            "right": 372,
+            "bottom": 755
+          }
+        ]
+      },
+      "errors": []
+    }
+  ],
+  "buildSha256": "adba7e20e1b308ba7769372e1192393c2987a283f2e3802b21bd8d13f081f903",
+  "buildBytes": 640177,
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/152.0.7977.76",
+    "revision": "@0d89dfa2dd7c1ec4b8a14b9f303f887bb63b6174",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "jsVersion": "15.2.124.19"
+  }
+}
