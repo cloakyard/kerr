@@ -2,7 +2,7 @@
    Writes only to `view` — it never touches the renderer, so orbiting and
    drawing stay independent of each other. */
 import { canvas } from '../render/gl.js';
-import { view } from './camera.js';
+import { view, orbitCamera } from './camera.js';
 
 let px = 0, py = 0;
 const pointers = new Map();
@@ -19,7 +19,15 @@ canvas.addEventListener('pointerdown', e => {
   canvas.setPointerCapture(e.pointerId);
   if (pointers.size === 2) pinchDist = pinchSpan();
 });
-const endPointer = e => { pointers.delete(e.pointerId); pinchDist = 0; };
+const endPointer = e => {
+  pointers.delete(e.pointerId); pinchDist = 0;
+  // When one finger remains after a pinch, resume at its current position.
+  // Reusing the first finger's old origin made the camera jump hemispheres.
+  if (pointers.size === 1){
+    const remaining = pointers.values().next().value;
+    px = remaining.x; py = remaining.y;
+  }
+};
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
 
@@ -34,15 +42,14 @@ canvas.addEventListener('pointermove', e => {
     pinchDist = d;
     return;
   }
-  view.dragX += (e.clientX - px) * 0.004;
-  view.dragY += (e.clientY - py) * 0.0022;
-  view.dragY = Math.max(-0.55, Math.min(0.9, view.dragY));
+  orbitCamera((e.clientX - px) * Math.PI * 2 / Math.max(320, innerWidth),
+    (e.clientY - py) * Math.PI / Math.max(300, Math.min(innerWidth, innerHeight)));
   px = e.clientX; py = e.clientY;
 });
 
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  view.zoom = Math.max(0.42, Math.min(2.6, view.zoom * (1 + e.deltaY * 0.0012)));
+  view.zoom = Math.max(0.42, Math.min(2.6, view.zoom * Math.exp(Math.max(-1, Math.min(1, e.deltaY * 0.0012)))));
   view.idleT = 0;
 }, { passive:false });
 

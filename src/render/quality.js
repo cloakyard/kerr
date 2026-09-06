@@ -3,12 +3,10 @@
    are how many steps each ray takes and how big the buffer is. Both are
    retuned once a second from measured fps.
 
-   The bounds are the interesting part. 0.5x/96 is the floor at which the disk
-   still reads — below that the fringe dissolves into stair-stepping and the
-   photon ring goes dotted. 0.92x/220 is the ceiling: past it the gain is not
-   visible at any framing this piece uses, so the headroom is better spent
-   staying at 60. The gap between 42 and 57 is deliberately wide; a narrow one
-   makes the scale oscillate audibly against the music. */
+   The 0.5x/96 floor and 0.92x/220 ceiling are performance tradeoffs, not
+   convergence guarantees. At the lower budget, thin higher-order images may
+   remain unresolved. The gap between 42 and 57 reduces resolution pumping
+   when frame rate sits near a threshold. */
 export const Q = { scale: 0.85, steps: 180, dpr: 1 };
 
 const MIN_SCALE = 0.5, MAX_SCALE = 0.92;

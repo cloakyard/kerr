@@ -22,14 +22,15 @@
 <meta name="description" content="A relativistic black hole rendered by geodesic raymarching, scored by a cinematic piece generated live in your browser. Nothing is downloaded.">
 <meta name="theme-color" content="#05060a">
 <meta name="color-scheme" content="dark">
-<link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+<link rel="icon" href="/favicon.png?v=orbit-1" type="image/png" sizes="64x64">
+<link rel="icon" href="/favicon.svg?v=orbit-1" type="image/svg+xml" sizes="any">
 <link rel="canonical" href="https://kerr.cloakyard.com/">
 <!-- Installable. The manifest and the worker are the only two files the page
      asks for after load, which is why the CSP names manifest-src and
      worker-src explicitly — under default-src 'none' they would be blocked.
      iOS ignores the manifest for home-screen bookmarks and wants its own PNG. -->
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest?v=orbit-1">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=orbit-1" sizes="180x180">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KERR">
@@ -57,116 +58,90 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body class="boot">
+<canvas id="gl" aria-label="Interactive rotating black hole. Drag to orbit and scroll to approach."></canvas>
+<div class="bar t" aria-hidden="true"></div>
+<div class="bar b" aria-hidden="true"></div>
 
-<canvas id="gl"></canvas>
-<div class="bar t"></div>
-<div class="bar b"></div>
+<header class="masthead" id="masthead">
+  <div class="identity" aria-label="KERR, relativistic observatory">
+    <!-- KERR_MARK -->
+    <span class="wordmark">KERR</span><span class="identity-rule"></span><span class="identity-sub">RELATIVISTIC<br>OBSERVATORY</span>
+  </div>
+  <div class="world-status"><span class="status-dot"></span><span>LIVE SIMULATION</span><span class="status-slash">/</span><span class="world-name">GARGANTUA</span></div>
+</header>
 
 <div id="hud">
-  <div class="tl fade">
+  <div class="scene-controls soft" id="scenePanel" role="group" aria-label="Scene controls">
+    <span class="panel-label">OBSERVATION</span>
+    <label class="control-row" for="shot"><span>Camera</span><select id="shot"><option value="cinematic">Film view</option><option value="close">Close passage</option><option value="orbit">Oblique / orbit</option><option value="edge">Edge-on</option><option value="top">Top-down</option><option value="under">Underside</option></select></label>
+    <label class="control-row" for="palette"><span>Color</span><select id="palette"><option value="gargantua">Gargantua</option><option value="ember">Ember</option><option value="polar">Polar</option></select></label>
+    <label class="response-label" for="response"><span>Music response</span><output id="responseValue" for="response">100%</output></label>
+    <input id="response" type="range" min="0" max="2" step="0.05" value="1" aria-label="Music response intensity" aria-valuetext="100 percent">
+    <button class="text-btn" id="bReset" aria-label="Reset camera view">Reset view <span aria-hidden="true">↗</span></button>
+  </div>
+
+  <div class="tl fade" aria-label="Black hole telemetry">
+    <span class="panel-label">KERR METRIC</span>
     <div class="row"><span class="k">SPIN a</span><b id="tSpin">0.60</b></div>
     <div class="row"><span class="k">HORIZON</span><b id="tRh">1.00 r<sub>s</sub></b></div>
     <div class="row"><span class="k">ISCO</span><b id="tIsco">3.00 r<sub>s</sub></b></div>
     <div class="row"><span class="k">DISK IN</span><b id="tDin">3.00 r<sub>s</sub></b></div>
-    <div class="row"><span class="k">ORBIT</span><b id="tOrb">40.0 r<sub>s</sub></b></div>
-    <div class="row"><span class="k">STEPS</span><b id="tQ">180 / 0.85</b></div>
+    <div class="row"><span class="k">DISTANCE</span><b id="tOrb">40.0 r<sub>s</sub></b></div>
+    <div class="row quality-row"><span class="k">RAY STEPS</span><b id="tQ">180 / 0.85</b></div>
+    <span class="telemetry-note">GEODESIC RAYMARCHING</span>
   </div>
-  <div class="tr soft">
-    <!-- The wedge behind the slider is what says which end is loud; .vtrack is
-         the box it is drawn in, and setVol writes the level to --v. -->
-    <div class="vol"><span>VOL</span>
-      <div class="vtrack">
-        <input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume">
-      </div></div>
-    <button class="btn" id="bVoice" aria-label="Change output voicing">AUTO</button>
-    <button class="btn" id="bLoad" aria-label="Play your own audio file">OWN TRACK</button>
-    <button class="btn" id="bFull" aria-label="Toggle fullscreen">FULL</button>
-    <button class="btn" id="bHelp" aria-label="Keyboard shortcuts">?</button>
-  </div>
-  <canvas id="spec" class="fade"></canvas>
-  <div class="deck soft">
+
+  <nav class="tr soft" aria-label="Display controls">
+    <button class="btn" id="bView" aria-label="Scene controls" aria-controls="scenePanel" aria-expanded="false">View <span aria-hidden="true">⌄</span></button>
+    <button class="btn" id="bCinema" aria-label="Enter cinema mode" aria-pressed="false">Cinema <kbd>C</kbd></button>
+    <button class="btn" id="bFull" aria-label="Toggle fullscreen">Fullscreen <span aria-hidden="true">⛶</span></button>
+    <button class="btn help-btn" id="bHelp" aria-label="Keyboard shortcuts" aria-haspopup="dialog" aria-expanded="false">?</button>
+  </nav>
+
+  <div class="deck soft" aria-label="Music player">
     <div class="meta">
-      <div class="sect" id="sect" aria-live="polite" aria-atomic="true">DRIFT</div>
-      <div class="clock"><b id="t1">0:00</b> / <span id="t2">0:00</span></div>
+      <div class="track-info"><div class="track-kicker"><span id="audioSource">GENERATIVE SCORE</span><span class="track-dot">·</span><span id="audioStatus" role="status" aria-live="polite">LIVE SYNTHESIS</span></div><div class="track-title" id="trackTitle">The gravity of sound</div></div>
+      <div class="music-state"><div class="sect" id="sect" aria-live="polite" aria-atomic="true">DRIFT</div><div class="clock"><b id="t1">0:00</b><span class="clock-divider">/</span><span id="t2">4:00</span></div></div>
+      <div class="audio-actions"><button class="btn" id="bScore" aria-label="Return to the original generative score" hidden>Score</button><button class="btn" id="bLoad" aria-label="Play your own audio file"><span aria-hidden="true">＋</span> Own track</button><button class="btn" id="bVoice" aria-label="Change output voicing">AUTO</button><div class="vol"><span aria-hidden="true">VOL</span><div class="vtrack"><input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div></div></div>
     </div>
-    <!-- Transport: the play control sits with the timeline it drives, the way
-         it does in a media player. Both glyphs live in the one SVG and CSS
-         shows whichever the next click will produce — swapping textContent
-         would delete the icon. -->
+    <div class="signal"><span class="signal-label" aria-hidden="true">20 HZ</span><canvas id="spec" aria-label="Live audio frequency spectrum"></canvas><span class="signal-label" aria-hidden="true">16 KHZ</span></div>
     <div class="transport">
       <button class="btn icon" id="bPause" aria-label="Pause">
-        <svg class="ico" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-          <g class="i-pause"><rect x="5.5" y="3.5" width="3.2" height="13"/><rect x="11.3" y="3.5" width="3.2" height="13"/></g>
-          <path class="i-play" d="M6 3.5 L16.5 10 L6 16.5 Z"/>
-        </svg>
+        <svg class="ico" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><g class="i-pause"><rect x="5.5" y="3.5" width="3.2" height="13"/><rect x="11.3" y="3.5" width="3.2" height="13"/></g><path class="i-play" d="M6 3.5 L16.5 10 L6 16.5 Z"/></svg>
       </button>
-      <div id="map" tabindex="0" role="slider" aria-label="Timeline"
-           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div id="play"></div><div id="scrub">0:00</div>
-      </div>
+      <div id="map" tabindex="0" role="slider" aria-label="Timeline" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="play"></div><div id="scrub">0:00</div></div>
+      <div class="beat-readout" aria-label="Detected tempo"><span class="beat-dot" id="beatDot" aria-hidden="true"></span><span id="tempo">120</span><small>BPM</small></div>
     </div>
   </div>
-  <div class="hint" id="hint">Drag to orbit · Scroll to fall in · Drag the timeline to scrub · ? for keys</div>
-  <div id="drop" aria-hidden="true">
-    <div class="card">
-      <span id="dropIdx"></span>
-      <b id="dropName"></b>
-      <span id="dropRule"></span>
-    </div>
-  </div>
+  <div class="hint" id="hint"><span>DRAG TO ORBIT</span><span class="pointer-hint">SCROLL TO APPROACH</span><span class="touch-hint">PINCH TO APPROACH</span><span class="keyboard-hint">SPACE TO PAUSE</span></div>
+  <div id="drop" aria-hidden="true"><div class="card"><span id="dropIdx"></span><b id="dropName"></b><span id="dropRule"></span></div></div>
 </div>
 
-<div id="help" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-  <div class="panel">
-    <h2>CONTROLS</h2>
-    <dl>
-      <dt>Drag</dt><dd>Orbit the singularity</dd>
-      <dt>Scroll / pinch</dt><dd>Fall in and pull back</dd>
-      <dt>Space</dt><dd>Pause and resume</dd>
-      <dt>← →</dt><dd>Skip 10 seconds</dd>
-      <dt>↑ ↓</dt><dd>Volume</dd>
-      <dt>R</dt><dd>Restart from the beginning</dd>
-      <dt>V</dt><dd>Cycle auto / built-in / speakers / headphones</dd>
-      <dt>F</dt><dd>Fullscreen</dd>
-      <dt>H or ?</dt><dd>Show or hide this panel</dd>
-      <dt>Drop a file</dt><dd>Visualise your own audio</dd>
-    </dl>
-    <button class="btn" id="bClose" style="margin-top:26px">CLOSE</button>
-  </div>
+<button class="btn" id="bExitCinema" aria-label="Exit cinema mode">Show controls <kbd>ESC</kbd></button>
+<div id="help" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" aria-hidden="true">
+  <div class="panel"><span class="panel-label">FLIGHT MANUAL</span><h2>Explore the well.</h2><dl tabindex="0" aria-label="Navigation and playback controls">
+    <dt>Drag</dt><dd>Orbit freely through both hemispheres</dd><dt>Scroll / pinch</dt><dd>Approach and pull back</dd><dt>Space</dt><dd>Pause and resume</dd><dt>← →</dt><dd>Skip 10 seconds</dd><dt>↑ ↓</dt><dd>Adjust volume</dd><dt>1 / 2 / 3</dt><dd>Film / close / oblique views</dd><dt>4 / 5 / 6</dt><dd>Edge-on / top-down / underside</dd><dt>C / Esc</dt><dd>Enter / leave cinema mode</dd><dt>X</dt><dd>Reset camera view</dd><dt>R</dt><dd>Restart the music</dd><dt>V</dt><dd>Cycle output voicing</dd><dt>F</dt><dd>Toggle fullscreen</dd><dt>H or ?</dt><dd>Open this panel</dd><dt>Drop a file</dt><dd>Visualise your own audio</dd>
+  </dl><button class="btn" id="bClose">Back to the singularity <span aria-hidden="true">↗</span></button></div>
 </div>
-<div id="toast"></div>
-<div id="dz">Drop an audio file to visualise it</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="dz">Drop an audio file<br><span>Let your music bend the light.</span></div>
 
 <div id="boot">
-  <div class="eyebrow">Anomaly 6.7 × 10⁹ M☉</div>
-  <h1>KERR</h1>
-  <div class="sub">A cinematic descent into a rotating black hole</div>
-  <div class="specs">
-    <div class="spec"><b>120</b><span>BPM</span></div>
-    <div class="spec"><b>4:00</b><span>Runtime</span></div>
-    <div class="spec"><b>D minor</b><span>Key</span></div>
-    <div class="spec"><b>Live</b><span>Synthesis</span></div>
+  <div class="intro-content">
+    <div class="eyebrow"><span class="tiny-rule"></span> AN OBSERVATION IN SOUND & LIGHT</div>
+    <h1>Gargantua<span class="title-period">.</span></h1>
+    <div class="sub">At the edge of infinity, <br>everything moves to the music.</div>
+    <p class="intro-description">Explore a rotating black hole. An original live score bends its light, stirs its accretion disk, and pulls you closer.</p>
+    <div class="specs"><div class="spec"><b>120</b><span>BPM</span></div><div class="spec"><b>4:00</b><span>Journey</span></div><div class="spec"><b>D minor</b><span>Key</span></div></div>
+    <button id="go"><span class="go-icon" aria-hidden="true">▶</span> Enter the well <span class="go-arrow" aria-hidden="true">↗</span></button>
+    <button id="own" class="own-track">Or explore with your own music <span aria-hidden="true">↗</span></button>
+    <div class="pick"><span class="picklabel">LISTENING ON</span><div class="seg2" role="group" aria-label="Output voicing"><button data-voice="auto" class="on" aria-pressed="true">Auto</button><button data-voice="laptop" aria-pressed="false">Built-in</button><button data-voice="monitors" aria-pressed="false">Speakers</button><button data-voice="phones" aria-pressed="false">Headphones</button></div><span class="pickwhy" id="pickwhy" aria-live="polite"></span></div>
+    <div class="note">Synthesised here. Your files stay on your device.</div>
   </div>
-  <div class="pick">
-    <span class="picklabel">Playing through</span>
-    <div class="seg2" role="group" aria-label="Output voicing">
-      <button data-voice="auto" class="on" aria-pressed="true">Auto</button>
-      <button data-voice="laptop" aria-pressed="false">Built-in</button>
-      <button data-voice="monitors" aria-pressed="false">Speakers</button>
-      <button data-voice="phones" aria-pressed="false">Headphones</button>
-    </div>
-    <span class="pickwhy" id="pickwhy" aria-live="polite"></span>
-  </div>
-  <button id="go">Enter the well</button>
-  <div class="note">
-    Organ, strings and timpani, generated live in your browser — nothing is downloaded.<br>
-    <a id="own">Or drop in your own audio file →</a>
-  </div>
+  <div class="intro-coordinate" aria-hidden="true"><span class="coordinate-cross">+</span><div>GARGANTUA<br><span>PROGRADE ACCRETION DISK</span></div><span class="coordinate-line"></span></div>
+  <div class="intro-footer"><span>DRAG TO ORBIT <span class="footer-dot">·</span> <span class="pointer-hint">SCROLL TO APPROACH</span><span class="touch-hint">PINCH TO APPROACH</span></span><span>REAL-TIME / WEB AUDIO + WEBGL</span></div>
 </div>
-
-<input type="file" id="file" accept="audio/*" style="display:none"
-       tabindex="-1" aria-label="Choose an audio file to visualise">
-
+<input type="file" id="file" accept="audio/*" style="display:none" tabindex="-1" aria-label="Choose an audio file to visualise">
 <script src="../vendor/three.bundle.js"></script>
 <script type="module" src="main.js"></script>
 </body>

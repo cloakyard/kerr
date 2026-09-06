@@ -23,6 +23,8 @@ import { refreshAuto } from './direct/voicing.js';
 import { installDropZone } from './direct/dropzone.js';
 import { $ } from './direct/dom.js';
 import { installServiceWorker } from './pwa.js';
+import { REDUCED } from './motion.js';
+import { experience, installExperience } from './direct/experience.js';
 import './direct/input.js';
 import './direct/shortcuts.js';
 
@@ -33,6 +35,20 @@ mountField(BH.din * 1.02, BH.dout * 1.04);
 
 /* ---- boot ---- */
 let started = false;
+
+installExperience({
+  onReset(){
+    view.zoom = 1; view.dragX = 0; view.dragY = 0;
+    view.pull = 0; view.pullV = 0; view.idleT = 0;
+  },
+  onChange(state){
+    Audio.setReactivity(state.response);
+    if (state.response === 0){
+      rings.length = 0;
+      view.shake = view.flash = view.roll = view.pull = view.pullV = 0;
+    }
+  }
+});
 
 function begin(fn){
   if (!Audio.ready) Audio.init();
@@ -52,17 +68,26 @@ installDropZone(f => begin(() => Audio.loadFile(f)));
 const FILE_LABEL = { final:'PEAK', drop2:'HIGH', drop:'DRIVE', bridge:'MOTION', break:'CALM' };
 
 /* ---- frame ---- */
-let last = performance.now(), frames = 0, fpsAcc = 0;
+let last = performance.now(), frames = 0, fpsAcc = 0, sceneTime = 0;
+document.addEventListener('visibilitychange', () => {
+  last = performance.now(); frames = 0; fpsAcc = 0;
+});
 
 function frame(now){
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  fpsAcc += dt; frames++;
+  const elapsed = Math.max(0, (now - last) / 1000); last = now;
+  if (document.hidden) return;
+  const dt = Math.min(0.05, elapsed);
+  fpsAcc += elapsed; frames++;
+  sceneTime += dt * REDUCED;
 
   if (Audio.ready){
-    Audio.update();
-    Audio.popEvents(onEvent);
-    if (Audio.mode === 'file' && Audio.beat > 0) onBeat(Audio.beat);
+    Audio.update(elapsed);
+    Audio.popEvents(ev => {
+      if (ev.kind === 'section') onEvent(ev);
+      else if (experience.response > 0 && REDUCED) onEvent({ ...ev, v:ev.v * experience.response });
+    });
+    if (Audio.mode === 'file' && Audio.beat > 0 && REDUCED) onBeat(Audio.beat);
   }
 
   const t = Audio.ready ? Audio.time() : 0;
@@ -73,12 +98,12 @@ function frame(now){
     else setSection(FILE_LABEL[key]);
   }
 
-  const time = performance.now() / 1000;
-  const cam = updateCamera(dt, p, Audio, time);
+  const time = sceneTime;
+  const cam = updateCamera(dt, p, Audio, time, experience, !started);
   setSpin(cur.kerr);
   setIdle(view.idleT > 6);
 
-  renderFrame({ cam, look:cur, audio:Audio, rings, time, dt });
+  renderFrame({ cam, look:cur, audio:Audio, rings, time, dt, experience });
   updateHud(t, dt, cam.dist);
 
   /* adaptive quality — measured here because this is where the clock is,

@@ -71,6 +71,21 @@ test('the social card metadata is intact', () => {
   }
 });
 
+test('the masthead and icon vectors share the canonical orbit geometry', async () => {
+  const logo = await readFile(join(root, 'public', 'logo.svg'), 'utf8');
+  const geometry = logo.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)?.[1].trim();
+  assert.ok(geometry, 'the canonical logo has no geometry');
+  const mark = page.match(/<svg\b[^>]*class="brand-mark"[^>]*>([\s\S]*?)<\/svg>/)?.[1].trim();
+  assert.equal(mark, geometry, 'the visible header drifted from the icon master');
+  assert.ok(!page.includes('<!-- KERR_MARK -->'), 'the logo placeholder survived the build');
+  const color = logo.match(/\bcolor="([^"]+)"/)?.[1];
+  for (const name of ['favicon.svg', 'icon.svg', 'icon-maskable.svg']) {
+    const svg = await readFile(join(root, 'dist', name), 'utf8');
+    assert.ok(svg.includes(geometry), `${name} needs regeneration from logo.svg`);
+    assert.equal(svg.match(/\bcolor="([^"]+)"/)?.[1], color, `${name} changed the mark colour`);
+  }
+});
+
 test('the payload stays inside its budget', () => {
   const raw = Buffer.byteLength(page);
   const br = brotliCompressSync(page, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }).length;
@@ -99,6 +114,7 @@ test('the build fails loudly if a substitution target moves', async () => {
     '<link rel="stylesheet" href="styles.css">',
     '<script src="../vendor/three.bundle.js"></script>',
     '<script type="module" src="main.js"></script>',
+    '<!-- KERR_MARK -->',
   ]) {
     assert.ok(html.includes(tag), `src/index.html no longer contains: ${tag}`);
   }

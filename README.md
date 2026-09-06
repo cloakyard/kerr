@@ -1,8 +1,10 @@
 <div align="center">
 
+  <p><img src="public/favicon.svg" alt="KERR orbit mark" width="56" height="56"></p>
+
   <h1>KERR</h1>
 
-  <p><strong>A relativistic black hole, rendered by tracing light through curved spacetime.</strong></p>
+  <p><strong>An artist-directed black hole observatory, with relativistic light bending and a live cinematic score.</strong></p>
   <p>Scored by a cinematic piece that is generated live in your browser — no audio file is ever downloaded.</p>
 
   <p><a href="https://kerr.cloakyard.com/">kerr.cloakyard.com</a></p>
@@ -11,27 +13,65 @@
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="MIT License" /></a>
     <img src="https://img.shields.io/badge/platform-Web-blue" alt="Platform: Web" />
     <img src="https://img.shields.io/badge/dependencies-1-brightgreen" alt="One dependency" />
-    <img src="https://img.shields.io/badge/payload-135%20KB%20br-brightgreen" alt="135 KB brotli" />
+    <img src="https://img.shields.io/badge/payload-139%20KB%20br-brightgreen" alt="139 KB brotli" />
   </p>
 
 </div>
 
 <p align="center">
-  <img src="screenshots/kerr-hero.jpg" alt="KERR — seen almost edge-on: the far side of the disk lensed up over the shadow and wrapped into a full ring beneath it, the near side cutting across in front, and the photon ring hugging the horizon" width="960">
+  <a href="screenshots/kerr-desktop-cinema.png"><img src="screenshots/kerr-desktop-cinema.png" alt="KERR in cinema mode: a luminous disk curves above and below the dark central shadow, with a visible Show controls exit" width="960"></a>
+  <br><sub>Cinema · 1440 × 900</sub>
 </p>
 
 ---
 
 ## ✨ What it is
 
-A single page that draws a spinning black hole the way light actually arrives at a camera near one, and plays a four-minute piece written for it. Everything is computed at runtime — no video, no texture, no audio asset.
+A single page that explores a Gargantua-inspired black hole and plays a four-minute piece written for it. Everything is computed at runtime — no video, no texture, no audio asset. The renderer combines a Schwarzschild-style ray integrator with an approximate spin perturbation and Kerr horizon/ISCO radii; it is a cinematic visualization, not a full Kerr metric solver.
 
-- **🌀 Geodesic raymarching** — every pixel integrates a null geodesic through Schwarzschild spacetime with an adaptive midpoint scheme. The photon ring, the Einstein ring and the disk's over-and-under lensed images are not drawn; they are what the integrator produces.
-- **🔥 A disk built to _Interstellar_'s own numbers** — DNEG's geometry (`r = 9.26M` to `18.70M`, `a/M = 0.6`), Thorne's position-independent 4500 K, Keplerian shear, and front-to-back opacity so the disk occludes its own far side. One fixed chroma measured off the film's published render, not a temperature ramp.
+- **🌀 Relativistic raymarching** — an adaptive RK4 integrator bends a single emitting and absorbing disk volume into its over-and-under images. The inner light comes from material encountered along the rays; there is no added photon-ring outline. Finite ray budgets and spin remain approximations.
+- **🔥 A structured accretion disk** — DNEG-inspired annulus geometry (`r = 9.26M` to `18.70M`), differential rotation, turbulent dark lanes, and fine filaments throughout an emitting and absorbing volume. Controlled bloom, lens streaks, and a restrained star field shape the glow around the shadow.
 - **🎼 A live score** — pipe organ, strings, choir formants, a bell arpeggio, timpani and a clock tick, sequenced through ten sections in D minor by a Web Audio graph of oscillators and filters. Intensity is one continuous curve across the four minutes, so sections hand over instead of restarting.
 - **🎚️ Three output voicings, picked for you** — the same performance re-mixed for built-in speakers, powered monitors or headphones, chosen automatically and overridable in one tap. A real signal-path change, not a preset name.
-- **🎧 Bring your own audio** — drop any file on the page and the visualiser drives itself from an FFT and onset detector instead.
+- **🎧 Bring your own audio** — choose or drop a supported audio file. Five frequency bands, spectral-flux onset detection, and a confidence-gated tempo estimate drive the scene; return to the original score from the player.
+- **🎛️ Direct the experience** — Film, close-passage, oblique, exact edge-on, top-down, and underside views; unrestricted drag through both poles; Gargantua, Ember, and Polar palettes; independent music-response intensity; and a cinema mode with a keyboard-accessible exit.
 - **📲 Installable, and it works on a plane** — install it and the whole thing runs offline, because "the whole thing" is one document with no runtime assets to miss.
+
+---
+
+## 🎹 Controls
+
+Observation controls select a camera, color palette and music-response amount. On compact screens, **View** opens these controls when needed. Live telemetry reports the simulated geometry and rendering quality; the bottom player combines a spectrum, tempo, source status and scrubbable timeline. Imported tracks expose a return-to-score button. Cinema mode clears the interface and keeps a visible exit. Help keeps its close button visible while the shortcut list scrolls, then restores focus to the opener.
+
+<p align="center">
+  <a href="screenshots/kerr-desktop-interface.png"><img src="screenshots/kerr-desktop-interface.png" alt="Desktop interface with observation controls on the left, geometry readouts on the right, and the score player below the black hole" width="960"></a>
+  <br><sub>Desktop interface · 1440 × 900</sub>
+</p>
+
+<p align="center">
+  <a href="screenshots/kerr-tablet-portrait.png"><img src="screenshots/kerr-tablet-portrait.png" alt="Tablet portrait layout with compact View controls and a player beneath the complete disk" width="360"></a>
+  <a href="screenshots/kerr-mobile-portrait.png"><img src="screenshots/kerr-mobile-portrait.png" alt="Phone portrait layout with reachable top controls, a fully framed disk and a stacked music player" width="222"></a>
+  <br><sub>Tablet · 768 × 1024 &nbsp; / &nbsp; Phone · 390 × 844</sub>
+</p>
+
+These direct browser captures show **Ascent at 0:35**, using Film view, the Gargantua palette and 100% music response. Open an image for full size. See the [mobile controls](screenshots/kerr-mobile-controls.png), [landscape](screenshots/kerr-mobile-landscape.png) and [small-screen](screenshots/kerr-mobile-small.png) captures, the [responsive review](docs/RESPONSIVE-REVIEW.md), and [capture provenance](screenshots/capture-manifest.json). Tablet and phone views use Chrome viewport/touch emulation.
+
+| | |
+| --- | --- |
+| Drag | Orbit |
+| Scroll / pinch | Fall in and pull back |
+| Space | Pause |
+| ← → | Skip 10 s |
+| ↑ ↓ | Volume |
+| `1` / `2` / `3` | Film / close-passage / oblique camera |
+| `4` / `5` / `6` | Exact edge-on / top-down / underside camera |
+| `C` / `Esc` | Enter / leave cinema mode |
+| `X` | Reset view |
+| `R` | Restart |
+| `V` | Cycle voicing: auto / built-in / speakers / headphones |
+| `F` | Fullscreen |
+| `H` or `?` | Shortcuts |
+| Drop a file | Visualise your own audio |
 
 ---
 
@@ -41,35 +81,34 @@ Einstein published his field equations in 1915, and Schwarzschild solved them fo
 
 Roy Kerr found it in 1963 — barely two pages in *Physical Review Letters*, giving the exact geometry around a spinning mass. It matters because black holes form from collapsing stars, stars rotate, and angular momentum is conserved all the way down: essentially every black hole is a Kerr black hole, and Schwarzschild's is the special case that never quite occurs.
 
-Everything here that makes the image more than a black circle comes from that solution — the horizon shrinking as spin rises, the innermost stable orbit migrating from `6M` toward `M`, and frame dragging, where spacetime is hauled around with the hole. Gargantua is one too: Thorne set its spin just shy of maximal, which is the only reason an hour on Miller's planet costs seven years back home.
+The project borrows the shrinking horizon and migrating prograde ISCO from that solution. Its light bending uses a simpler Schwarzschild-based model with approximate frame dragging, where rotation perturbs the light's path. The name describes its inspiration and scalar geometry, rather than a claim that the ray shader solves the full rotating metric.
 
 ---
 
 ## 🔭 The physics
 
-Distances are in Schwarzschild radii (`r_s = 1`, so `M = 0.5`). The HUD reports the live state of the simulation.
+Distances are in Schwarzschild radii (`r_s = 1`, so `M = 0.5`). The HUD reports the renderer's state. The analytical horizon/ISCO calculations are independently tested; those tests do not establish ray-path convergence or full physical accuracy. See the [visual review](docs/VISUAL-REVIEW.md) for the audit and verification criteria.
 
 | Quantity | Behaviour |
 | --- | --- |
-| Null geodesics | `a = −1.5 h² r⃗ / r⁵`, integrated with adaptive-step RK2. Step size falls out of local curvature, so rays crawl around the photon sphere and stride across flat space. |
+| Ray integration | `a = −1.5 h² r⃗ / r⁵`, integrated with adaptive-step RK4. Step size follows local curvature and distance to the disk volume; the additional spin term is a perturbation, not a Kerr geodesic equation. |
 | Frame dragging | A gravitomagnetic Lense–Thirring term, `a += a_spin · (v⃗ × B⃗_g)`, falling off as `1/r⁴`. |
 | Horizon | `r_h = M + √(M² − a²)` — shrinks as spin rises. |
 | ISCO | The full Kerr expression, `6M` at `a = 0` falling toward `M` as `a → 1`. |
-| Photon sphere | `1.5 r_s` at zero spin, moving inward for a prograde orbit. |
-| Doppler | `δ = 1 / (γ(1 − β·n̂))`. Physically `I_obs ∝ δ³`; the exponent here runs at 0.15, so beaming is present but ±6%. |
-| Redshift | `√(1 − 1/r)`, folded into the same shift factor. |
-| Disk | `r = 9.26M … 18.70M`, one temperature throughout, exactly as specified for the film. |
-| Disk particles | Precessing ellipses driven by the relativistic epicyclic frequency `κ = ω√(1 − 6M/r)`, on a slow inspiral. |
+| Higher-order images | Rays can turn around the hole and encounter the disk again. No screen-space circle is added to stand in for unresolved paths. |
+| Doppler and redshift | The shader retains an optional approximate shift factor, but its exponent is zero in the film treatment: frequency shifts and beaming are disabled. |
+| Disk | Nominal annulus `r = 9.26M … 18.70M`, with artist-tuned density, thickness and gray emissivity. Its fixed chroma is inspired by the uniform-temperature film disk, rather than derived from thermal radiative transfer. |
+| Disk particles | Stylized precessing ellipses using `κ = ω√(1 − 6M/r)`, on a slow inspiral. The separately rendered particles are masked near strongly bent rays rather than individually ray-traced. |
 
 **Where it departs, and why.** DNEG implemented the Doppler asymmetry correctly for _Interstellar_, then removed it: at `I ∝ δ³` the two sides differ by roughly fifty times, giving one blindingly bright edge that reads as a mistake with the shadow lost inside it. The spin is the same compromise, and the reason the two figures above disagree — Gargantua needs `a/M ≈ 1` for the film's time dilation, but at that spin the shadow goes lopsided and its left edge flattens, so it was slowed to `0.6` for the camera. Frame dragging is kept light for the same reason: it is a perturbation on a Schwarzschild marcher, and pushed hard it cuts a notch out of the silhouette instead of smoothly flattening it.
 
-**Where the colour comes from.** Not a black-body curve. Thorne specified a disk that has stopped accreting and cooled to one temperature everywhere, so its colour cannot vary with radius. Inverting this renderer's tone curve on Figure 15a of the DNEG paper gives the linear emission behind each pixel, and from the faintest outer wisp to the core it returns a near-constant `(1.00, 0.48, 0.40)`. The white-hot centre and the salmon fringe are one colour at two intensities; the walk to white is the tone curve and the veiling flare doing their jobs. Ramping hue with radius is what makes a render of Gargantua come out khaki instead of rose.
+**Where the colour comes from.** The default `(1.00, 0.48, 0.40)` chroma is an artistic match, not a measured spectral model or a recovered production value. The DNEG reference specifies a uniform 4500 K disk, a 6500 K white balance, and the film treatment with frequency shifts omitted. Brightness, tone mapping and flare produce the progression toward white in this renderer; Ember and Polar are creative alternatives. The paper does not support the earlier claim that nonlinear film-layer interactions caused a particular cool highlight color. See the [primary-reference audit](docs/INTERSTELLAR-REFERENCE.md).
 
-**Why the outer disk is a volume.** An infinitely thin plane has a tell you cannot texture your way out of: its silhouette is exactly a plane, so the edge comes out glassy however good the map on it. The film's filaments stand off the mid-plane with dark lanes between them, which came from DNGR's volumetric model — ~17 million Houdini voxels of optical density, integrated along the beam. So this disk is a real volume too: a slab of fbm density the marcher integrates, emissive and absorbing both, because those dark lanes are filaments in front of brighter ones and that only happens if the material occludes. Three things were measured off the film. Half-thickness is roughly 1 r_s at mid-disk falling to a knife edge at the rim, so `h/r` *falls* with radius, where a constant flare angle would make it rise and the fringe billow into smoke. Only 56–65% of the vertical span reads as material. And the noise must stay coarse, because a ray grazing the tip runs several r_s through the slab and finer features average away in their own line integral, leaving a solid wall where the film has holes.
+**Why the disk is a volume.** A disk rendered only when rays cross its mid-plane disappears for rays traveling exactly within that plane, while an added textured fringe cannot give its face proper depth. The entire disk now emits and absorbs along ray segments, with opacity `1 − exp(−σΔs)` and front-to-back transmittance. Its tapered Gaussian profile, corrugated layers and evolving density produce the same material from above, below and within the plane. Two overlapping material phases renew over 18 simulation seconds, preventing differential shear from winding the texture indefinitely into moiré; the music modulates this material clock. These thickness, density and motion parameters are visual choices; the reference supplies no unique numerical profile. This is a procedural interpretation of DNGR's volume, tuned for a finite browser ray budget rather than a reconstruction of its production data.
 
-**Where the camera goes.** DNEG shot Gargantua from `r_c = 74.1M` and `θ_c = 86.56°` — 3.4° above the disk plane. That grazing angle is what folds the disk's over-and-under images into a closed halo; lift much past ten degrees and the arcs peel apart into an ordinary ringed planet, which is why every framing here sits near the plane. The fields of view are long for the same reason: on the film's plates the shadow spans about an eighth of the frame width, and at a sixteenth the halo, photon ring and ragged rim all shrink below readable size.
+**Where the camera goes.** DNEG shot Gargantua from `r_c = 74.1M` and `θ_c = 86.56°` — 3.4° above the disk plane. The Film view begins at that grazing angle, and Close passage also stays near the plane. Oblique, edge-on, top-down and underside views hold fixed angles; the cardinal views land exactly at 0° and ±90°. Drag can pass continuously through both poles and holds the chosen orientation after release. Reset restores the selected preset. The black hole stays at `a/M = 0.6` across the score, so inspecting its geometry is independent of the music. Framing pulls back for portrait screens and makes room beside the introductory copy on wide screens.
 
-**Veiling flare.** A wide, soft, near-neutral glow, run as a second blur chain at an eighth resolution so it can reach a couple of hundred pixels. DNEG convolved their renders with the measured point spread function of the real IMAX lenses so the CG would cut against photographed footage; a tight threshold bloom is no substitute. It stays well below their own flared plate, though, which fills the shadow to pale grey. In the film the shadow reads black.
+**Veiling flare.** A second blur chain at an eighth resolution supplies wide, near-neutral optical scatter alongside the tighter bloom. Its strength and shape are artist-tuned approximations, with enough contrast to retain the disk structure and central shadow. DNEG used measured IMAX lens point-spread functions; this renderer does not reproduce that calibrated optical model, and its shadow brightness is a grading choice rather than a measured match to a film frame.
 
 ---
 
@@ -78,6 +117,8 @@ Distances are in Schwarzschild radii (`r_s = 1`, so `M = 0.5`). The HUD reports 
 Ten sections over 120 bars, and every one used to restart the music: each swelled from its own floor across its own local progress, so all ten crescendoed independently — a build would reach its ceiling and the drop it was building to would begin at 41% of it. Instrumenting the sequencer put a number on it: **all nine section changes stepped backwards, by 25% to 77% of the scheduled energy.**
 
 Intensity is now a property of the piece: each section declares the level it enters and leaves at, `i1` of one *is* `i0` of the next, and every level hangs off that curve. Section changes still change **texture** — a drop brings in organ ranks, choir and the tick an octave up — but not level, and `FALLING` and `HORIZON` still fall, from wherever the previous section left off. Two related fixes went with it: the pads release over exactly their attack time, so consecutive blocks crossfade to a constant instead of dipping; and the melody moved to the absolute bar, which stops it restarting its phrase and — since section starts are not all multiples of eight — sitting over the wrong chord.
+
+The visual response uses five frequency bands from a 4096-point FFT, with attack and release measured in seconds. A waveform silence gate prevents adaptive normalization from amplifying silence. Spectral flux separates attacks from sustained notes; the built-in score supplies its known pulse while imported tracks get a conservative tempo estimate whose confidence controls the readout. Bass supports disk emission and camera weight, mids change material detail, and highs reveal small highlights. The response slider changes this visual sensitivity independently of listening volume. Seeking and changing sources reset analysis history.
 
 ---
 
@@ -110,7 +151,7 @@ Two limits. `outputLatency` reads 0 until the AudioContext is running, so the wi
 | Area | Technology |
 | --- | --- |
 | Rendering | WebGL via [three.js r185](https://threejs.org/) (vendored, tree-shaken) |
-| Shading | GLSL — geodesic raymarch, volumetric disk fringe, bloom and veiling flare, ACES tonemap |
+| Shading | GLSL — RK4 raymarch, emitting and absorbing disk volume, bloom and veiling flare, ACES tonemap |
 | Audio | [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) — oscillators, biquads, convolution reverb, waveshaping |
 | Build | esbuild, driven by ~350 lines of Node across `scripts/`. No framework. |
 | Deployment | [Cloudflare Workers](https://workers.cloudflare.com/) as static assets, at [kerr.cloakyard.com](https://kerr.cloakyard.com/) |
@@ -129,7 +170,7 @@ The source is a module tree; the artefact is one self-contained HTML file. Both 
 
 ```
 src/
-  index.html           the shell: head, HUD markup, three tags the build fills
+  index.html           the shell: head, HUD markup and build placeholders
   styles.css
   main.js              the composition root, and the frame loop
   three.js             the one seam that reads the vendored bundle
@@ -138,6 +179,7 @@ src/
   audio/
     arrangement.js     the score as data, and the intensity curve over it
     engine.js          Web Audio graph, sequencer, analyser
+    features.js        frequency envelopes, spectral flux, tempo confidence
   render/
     shaders/           bh.frag · final.frag · bright.frag · blur.frag · …
     gl.js              context, colour management, float-target detection
@@ -148,6 +190,7 @@ src/
     particles.js       the orbiting field
   direct/
     camera.js          section presets, easing, the shot
+    experience.js      shot, palette, response and cinema controls
     events.js          audio events → shockwave, shake, flash, pull
     hud.js             map, telemetry, spectrum, title cards
     output.js          the Auto voicing heuristic, as a pure function
@@ -156,9 +199,11 @@ src/
 
 **Three layers, and the arrows point one way.** `audio/` imports nothing — no DOM, no renderer, no camera. `render/` imports nothing above it. `direct/` composes both, and only `main.js` knows all three. That was already true when this was one file, held together by discipline; `npm run check` and [`test/structure.test.js`](test/structure.test.js) now enforce it, so an import pointing the wrong way fails before it ships.
 
-**The shaders are real files.** `bh.frag` is 375 lines that used to live in a JavaScript template literal, where a stray backtick in a comment would silently truncate the string and kill the page at load. They highlight now, and `#include "noise.glsl"` is resolved at build time. The only honest way to check GLSL is to compile it, which is what the browser test does.
+**The shaders are real files.** `bh.frag` used to live in a JavaScript template literal, where a stray backtick in a comment would silently truncate the string and kill the page at load. The shaders highlight now, and `#include "noise.glsl"` is resolved at build time. The browser test compiles the actual GLSL and checks that the page draws.
 
 **The arithmetic is kept apart from the machinery.** `kerr.js`, `output.js` and the intensity curve in `arrangement.js` hold no state and touch no uniforms — which is what lets a unit test check the ISCO against Bardeen, Press & Teukolsky, or a section boundary against the one after it, rather than against a screenshot.
+
+**The official mark.** [`public/logo.svg`](public/logo.svg) is the canonical orbit logo, inlined into the header by the build. Run `npm run icons` after changing it to generate the favicon SVG/PNG, app and maskable SVGs, and their install PNGs, including the Apple touch icon. Generation uses a local Chrome installation with no extra dependencies; set `CHROME_PATH` if needed. Commit the generated assets together; normal builds use those files directly. The dark-tile [`public/favicon.svg`](public/favicon.svg) also supplies the README mark.
 
 ---
 
@@ -179,9 +224,9 @@ A rebuild is about 50 ms, so `npm run dev` feels like editing and reloading — 
 | `npm run build` | Bundle and inline everything into `dist/index.html` |
 | `npm run preview` | Production build, then serve `dist/` |
 | `npm run check` | Six static gates — see below |
-| `npm test` | 100 tests, including a real browser |
+| `npm test` | Automated regression tests, including a real browser |
 | `npm run deploy` | Check, test, build, publish to Cloudflare |
-| `npm run icons` | Re-rasterise the install icons from their SVG sources |
+| `npm run icons` | Generate favicon and install SVG/PNG variants from `public/logo.svg` using local Chrome |
 | `npm run vendor:three` | Re-bundle three.js — only needed when bumping it |
 
 Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste the new hash into `THREE_SHA256` in [`scripts/check.mjs`](scripts/check.mjs) and re-run `npm run check`.
@@ -198,10 +243,13 @@ Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste th
 | **Kerr geometry** | horizon and ISCO against published values — 6M at `a = 0`, 4.2330M at `a = 0.5`, 2.3209M at `a = 0.9` |
 | **Adaptive quality** | never leaves its band under 20,000 random frame rates; settles at both ends; survives `NaN` |
 | **Auto voicing** | the iPadOS-presents-as-a-Mac case, and that powered speakers are never guessed |
-| **GLSL includes** | diamond and circular includes resolve once, not twice — a duplicate is a redeclaration error |
+| **Music analysis and transport** | silence, bounded frequency envelopes, time-based smoothing, onset/tempo recovery, source switching and rejected playback |
+| **Reduced-motion camera** | stable automatic framing through a loud section, manual shot/zoom access, and a valid portrait camera basis |
+| **All-angle camera** | exact cardinal angles, finite orthonormal frames at both poles, continuous full turns, and persistent manual orientation |
+| **GLSL includes** | diamond and circular includes resolve once; literal smoothstep edges stay in their defined order |
 | **The artefact** | tags balanced, nothing external, shaders present, payload inside budget, README quoting the size the build makes |
 | **Structure** | no import cycles, no orphan modules, no dead exports, layering intact |
-| **The real page** | boots in headless Chrome under the production headers, asserts zero console errors, then reads pixels out of the WebGL buffer to check the frame is neither black nor the wrong colour |
+| **The real page** | boots under production headers, compiles and draws without errors, checks actual framebuffer pixels, and exercises sensitivity, shortcut isolation and overlay focus |
 | **The PWA** | the worker registers, controls the page, reaches the network, and serves the app with the network cut — while the document is still refused a `fetch()` |
 
 The browser tests skip cleanly, with a note, if no Chrome is found.
@@ -214,7 +262,7 @@ The browser tests skip cleanly, with a note, if no Chrome is found.
 npm run deploy
 ```
 
-That runs `check`, `test`, `build`, then `wrangler deploy`; [`wrangler.jsonc`](wrangler.jsonc) points at `dist/` and the domain is already configured. It takes about a minute because the tests run first — and they need a Chrome on the machine to be worth anything, since without one you lose the only check that catches a shader failing to compile.
+That runs `check`, `test`, `build`, then `wrangler deploy`; [`wrangler.jsonc`](wrangler.jsonc) points at `dist/` and the domain is already configured. The full browser regression suite runs before publishing and needs a local Chrome installation to catch failures such as a shader that does not compile.
 
 Four things that are only discoverable by trying them:
 
@@ -223,7 +271,7 @@ Four things that are only discoverable by trying them:
 - **`/index.html` 307s to `/`.** The runtime canonicalises it, and a redirected response cannot be written to the Cache API, so the service worker warms `/` instead.
 - **Turn Rocket Loader off** if it is on for the zone. It defers and rewrites inline scripts, and this page is one inline script. Cloudflare's own brotli already handles compression.
 
-The whole deployment is twelve static files: the document, the manifest, the service worker, four PNG icons, three SVGs, the social card, and `_headers`.
+The deployment contains the document, PWA manifest and service worker, SVG/PNG branding assets, the social card, and `_headers`.
 
 ---
 
@@ -248,32 +296,11 @@ The guarantee is unchanged and still browser-enforced. [`test/pwa.test.js`](test
 
 ## ⚙️ Performance
 
-The whole application is one 603 KB document — **135 KB over the wire** after brotli — served in a single request with no dependency waterfall.
+The whole application is one 625 KB document — **139 KB over the wire** after brotli — served in a single request with no dependency waterfall.
 
-The renderer measures its own frame rate and trades resolution scale against march step count to hold 60 fps, between `0.5×/96` steps and `0.92×/220`. On an M2 Max it sits at the ceiling. `prefers-reduced-motion` damps camera shake, chromatic aberration and flash.
+The renderer measures real elapsed frame time and trades resolution scale against march step count toward a 60 fps target, between `0.5×/96` steps and `0.92×/220`. Achieved frame rate depends on the browser, viewport and GPU; automated SwiftShader tests are correctness checks, not a hardware benchmark. Hidden tabs skip rendering and reset timing when visibility changes.
 
----
-
-## 🎹 Controls
-
-<p align="center">
-  <img src="screenshots/kerr-interface.jpg" alt="The interface: live simulation telemetry at top left, output and view controls at top right, and along the bottom the spectrum, the play control and the scrubbable ten-section arrangement map" width="900">
-</p>
-
-Live telemetry sits at top left — spin, horizon, ISCO, the disk's inner edge, orbital radius and the adaptive quality the renderer has settled on. Along the bottom, the play control sits with the arrangement map it drives; the map is scrubbable, and its captions drop out as the window narrows rather than colliding.
-
-| | |
-| --- | --- |
-| Drag | Orbit |
-| Scroll / pinch | Fall in and pull back |
-| Space | Pause |
-| ← → | Skip 10 s |
-| ↑ ↓ | Volume |
-| `R` | Restart |
-| `V` | Cycle voicing: auto / built-in / speakers / headphones |
-| `F` | Fullscreen |
-| `H` or `?` | Shortcuts |
-| Drop a file | Visualise your own audio |
+`prefers-reduced-motion` stops automatic camera orbit, breathing, roll, score-driven shot changes and accumulated material clocks, and disables transient camera effects and chromatic aberration. Manual shot selection and zoom still work. Audio can still change brightness and fine material detail, so this is not a complete static-image mode.
 
 ---
 

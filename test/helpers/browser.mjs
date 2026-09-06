@@ -214,7 +214,7 @@ async function waitFor(fn, { timeout = 20000, interval = 100, what = 'condition'
  * Launch headless Chrome, open one page, and return a Session plus the
  * console errors and uncaught exceptions collected since load.
  */
-export async function launch(chromePath) {
+export async function launch(chromePath, { softwareRendering = true } = {}) {
   const userDataDir = await mkdtemp(join(tmpdir(), 'kerr-chrome-'));
   const child = spawn(chromePath, [
     '--headless=new',
@@ -224,7 +224,9 @@ export async function launch(chromePath) {
     '--disable-background-networking', '--disable-sync', '--metrics-recording-only',
     // WebGL in headless comes from SwiftShader; without these the context
     // creation fails and every render assertion becomes a false negative.
-    '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
+    // Documentation captures can opt into the available GPU; tests retain
+    // the portable software-rendered default. Never override app quality.
+    ...(softwareRendering ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : []),
     '--mute-audio', '--autoplay-policy=no-user-gesture-required',
     '--window-size=1280,720',
     'about:blank',

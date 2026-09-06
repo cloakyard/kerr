@@ -25,11 +25,18 @@ import { build } from '../scripts/build.mjs';
 import { findChrome, launch, serve, goto, parseHeaders, headersFor } from './helpers/browser.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const iconVersion = 'orbit-1';
+const siteURL = (path) => new URL(path, 'https://kerr.test');
+const shippedPath = (path) => {
+  const url = siteURL(path);
+  assert.equal(url.origin, 'https://kerr.test', `install asset must stay local: ${path}`);
+  return join(out, url.pathname.replace(/^\//, ''));
+};
 
 const chrome = await findChrome();
 const skip = () => (chrome ? false : 'no Chrome found — set CHROME_PATH to run the PWA tests');
 
-let rules, manifest, ctx, site, page, errors, out;
+let rules, manifest, ctx, site, page, errors, out, headLinks;
 
 before(async () => {
   // Its own build directory — see the note in smoke.test.js
@@ -37,6 +44,9 @@ before(async () => {
   await build({ outDir: out });
   rules = parseHeaders(await readFile(join(root, 'public', '_headers'), 'utf8'));
   manifest = JSON.parse(await readFile(join(root, 'public', 'manifest.webmanifest'), 'utf8'));
+  const html = await readFile(join(root, 'src', 'index.html'), 'utf8');
+  headLinks = [...html.matchAll(/<link\s+([^>]+)>/g)].map(([, attrs]) =>
+    Object.fromEntries([...attrs.matchAll(/([\w-]+)="([^"]*)"/g)].map(([, key, value]) => [key, value])));
   if (!chrome) return;
   site = await serve(out, rules);
   ctx = await launch(chrome);
@@ -54,6 +64,7 @@ after(async () => {
 test('the manifest has everything an install prompt needs', () => {
   assert.equal(manifest.name, 'KERR — Singularity Visualizer');
   assert.equal(manifest.short_name, 'KERR');
+  assert.equal(manifest.id, '/', 'an artwork update must preserve the installed app identity');
   assert.equal(manifest.start_url, '/');
   assert.equal(manifest.scope, '/');
   assert.ok(['standalone', 'fullscreen', 'minimal-ui'].includes(manifest.display));
@@ -79,23 +90,40 @@ test('icons cover both the 192/512 pair and a maskable', () => {
 
 test('every file the manifest names is actually shipped', async () => {
   for (const src of [...manifest.icons.map((i) => i.src), ...manifest.screenshots.map((s) => s.src)]) {
-    assert.ok(existsSync(join(out, src.replace(/^\//, ''))), `manifest points at a missing file: ${src}`);
+    assert.ok(existsSync(shippedPath(src)), `manifest points at a missing file: ${src}`);
   }
 });
 
-test('the PNG icons really are the sizes they claim', async () => {
-  for (const icon of manifest.icons.filter((i) => i.type === 'image/png')) {
-    const buf = await readFile(join(out, icon.src.replace(/^\//, '')));
-    assert.equal(buf.subarray(1, 4).toString(), 'PNG', `${icon.src} is not a PNG`);
+test('the PNG install, Apple and fallback icons really are the sizes they claim', async () => {
+  const icons = [
+    ...manifest.icons.filter((i) => i.type === 'image/png'),
+    ...headLinks.filter((i) => i.type === 'image/png' || i.rel === 'apple-touch-icon')
+      .map((i) => ({ src: i.href, sizes: i.sizes })),
+  ];
+  for (const icon of icons) {
+    const buf = await readFile(shippedPath(icon.src));
+    assert.deepEqual([...buf.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], `${icon.src} is not a PNG`);
     const [w, h] = [buf.readUInt32BE(16), buf.readUInt32BE(20)];
     assert.equal(`${w}x${h}`, icon.sizes, `${icon.src} is ${w}x${h}, manifest says ${icon.sizes}`);
   }
 });
 
-test('the page links the manifest and an apple-touch-icon', async () => {
+test('the page prefers the SVG favicon and versions every install artwork URL', async () => {
   const html = await readFile(join(root, 'src', 'index.html'), 'utf8');
-  assert.match(html, /<link rel="manifest" href="\/manifest\.webmanifest">/);
-  assert.match(html, /<link rel="apple-touch-icon" href="\/icons\/apple-touch-icon\.png">/);
+  const favicons = headLinks.filter((i) => i.rel === 'icon');
+  assert.deepEqual(favicons.map((i) => [siteURL(i.href).pathname, i.type, i.sizes]), [
+    ['/favicon.png', 'image/png', '64x64'],
+    ['/favicon.svg', 'image/svg+xml', 'any'],
+  ], 'the scalable favicon must follow the PNG fallback');
+  const manifestLink = headLinks.find((i) => i.rel === 'manifest');
+  const apple = headLinks.find((i) => i.rel === 'apple-touch-icon');
+  assert.equal(siteURL(manifestLink.href).pathname, '/manifest.webmanifest');
+  assert.equal(siteURL(apple.href).pathname, '/icons/apple-touch-icon.png');
+  assert.equal(apple.sizes, '180x180');
+  for (const src of [...favicons.map((i) => i.href), manifestLink.href, apple.href, ...manifest.icons.map((i) => i.src)]) {
+    assert.equal(siteURL(src).searchParams.get('v'), iconVersion, `stale icon URL: ${src}`);
+    assert.ok(existsSync(shippedPath(src)), `missing versioned asset: ${src}`);
+  }
   // iOS ignores the manifest for home-screen bookmarks and reads these instead
   assert.match(html, /apple-mobile-web-app-capable" content="yes"/);
   assert.match(html, /apple-mobile-web-app-title" content="KERR"/);
@@ -156,11 +184,23 @@ test('the worker registers, controls the page, and reaches the network', { skip:
     const i = new Image();
     i.onload = () => res({ loaded: true, w: i.naturalWidth });
     i.onerror = () => res({ loaded: false });
-    i.src = '/icons/icon-192.png?cachebust=' + Math.random();
+    i.src = '/icons/icon-192.png?v=orbit-1&cachebust=' + Math.random();
     setTimeout(() => res({ timeout: true }), 8000);
   })`);
   assert.ok(probe.loaded, 'the worker could not fetch an uncached asset — it is serving 503s');
   assert.equal(probe.w, 192);
+});
+
+test('installation warms every versioned favicon and home-screen asset', { skip: skip() }, async () => {
+  const warmed = await page.eval(`(async () => {
+    const cache = await caches.open('kerr-orbit-1');
+    return (await cache.keys()).map(r => new URL(r.url).pathname + new URL(r.url).search);
+  })()`);
+  const expected = [
+    ...headLinks.filter((i) => ['manifest', 'icon', 'apple-touch-icon'].includes(i.rel)).map((i) => i.href),
+    ...manifest.icons.map((i) => i.src),
+  ];
+  for (const src of expected) assert.ok(warmed.includes(src), `asset was not warmed for offline use: ${src}`);
 });
 
 test('the document still cannot open a connection', { skip: skip() }, async () => {
@@ -189,6 +229,36 @@ test('the page loads with the network cut', { skip: skip() }, async () => {
   assert.equal(state.three, 'object', 'the vendored bundle did not survive offline');
   assert.ok(state.canvas > 0, 'no canvas offline');
   assert.ok(state.goWired, 'the app did not boot offline');
+  const artwork = await page.eval(`(async () => {
+    const urls = ${JSON.stringify([
+      '/favicon.png?v=orbit-1',
+      '/icons/apple-touch-icon.png?v=orbit-1',
+      '/icons/icon-192.png?v=orbit-1',
+      '/icons/icon-512.png?v=orbit-1',
+      '/icons/icon-maskable-512.png?v=orbit-1',
+    ])};
+    return Promise.all(urls.map(src => new Promise(resolve => {
+      const i = new Image();
+      i.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = i.naturalWidth; canvas.height = i.naturalHeight;
+        const c = canvas.getContext('2d'); c.drawImage(i, 0, 0);
+        resolve({ src, width: i.naturalWidth, height: i.naturalHeight,
+          cornerAlpha: c.getImageData(0, 0, 1, 1).data[3],
+          centerAlpha: c.getImageData(i.naturalWidth / 2, i.naturalHeight / 2, 1, 1).data[3] });
+      };
+      i.onerror = () => resolve({ src, error: true });
+      i.src = src;
+      setTimeout(() => resolve({ src, timeout: true }), 5000);
+    })));
+  })()`);
+  for (const [index, size] of [64, 180, 192, 512, 512].entries()) {
+    assert.equal(artwork[index].width, size, `icon failed to decode offline: ${JSON.stringify(artwork[index])}`);
+    assert.equal(artwork[index].height, size);
+    assert.equal(artwork[index].centerAlpha, 255, 'the mark must remain opaque');
+    assert.equal(artwork[index].cornerAlpha, index === 0 ? 0 : 255,
+      index === 0 ? 'the rounded favicon must not acquire white opaque corners' : 'install tiles require an opaque background');
+  }
   assert.deepEqual(errors, [], 'errors while offline:\n' + errors.join('\n'));
 
   await page.send('Network.emulateNetworkConditions',

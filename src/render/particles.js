@@ -34,7 +34,8 @@ export const uP = {
   uTime:{value:0}, uOrbT:{value:0}, uFlowT:{value:0},
   uBass:{value:0}, uMid:{value:0}, uHigh:{value:0},
   uPull:{value:0}, uEcc:{value:0.16}, uIsco:{value:3},
-  uEye:{value:new THREE.Vector3()}, uSizeScale:{value:1}, uFade:{value:1}
+  uEye:{value:new THREE.Vector3()}, uSizeScale:{value:1}, uFade:{value:1},
+  uChroma:{value:new THREE.Vector3(1.0,0.48,0.40)}
 };
 
 /* Each grain runs a real orbit rather than a spun ring: a precessing

@@ -30,13 +30,14 @@ const DIST = join(root, 'dist');
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';
 
-/* The three tags the build replaces. They are matched exactly rather than by
+/* The tags the build replaces. They are matched exactly rather than by
  * a loose pattern, so renaming or moving any of them fails here, loudly,
  * instead of silently shipping a page that fetches paths production does not
  * have. */
 const CSS_TAG = '<link rel="stylesheet" href="styles.css">';
 const THREE_TAG = '<script src="../vendor/three.bundle.js"></script>';
 const MAIN_TAG = '<script type="module" src="main.js"></script>';
+const MARK_TAG = '<!-- KERR_MARK -->';
 
 // `</script>` anywhere inside a payload would close the tag early.
 const safe = (js) => js.replace(/<\/script>/gi, '<\\/script>');
@@ -66,11 +67,14 @@ export async function build({ dev = false, outDir = DIST } = {}) {
   const html = await readFile(join(SRC, 'index.html'), 'utf8');
   const css = await readFile(join(SRC, 'styles.css'), 'utf8');
   const three = await readFile(VENDOR, 'utf8');
+  const mark = (await readFile(join(PUBLIC, 'logo.svg'), 'utf8')).trim()
+    .replace('role="img" aria-label="KERR"', 'class="brand-mark" aria-hidden="true"');
 
   for (const [name, tag] of [
     ['stylesheet', CSS_TAG],
     ['vendor script', THREE_TAG],
     ['app script', MAIN_TAG],
+    ['brand mark', MARK_TAG],
   ]) {
     if (!html.includes(tag))
       throw new Error(`${name} tag not found in src/index.html — did the path change?\n  expected: ${tag}`);
@@ -78,6 +82,7 @@ export async function build({ dev = false, outDir = DIST } = {}) {
   if (/<\/style/i.test(css)) throw new Error('src/styles.css contains "</style" and cannot be inlined');
 
   const page = html
+    .replace(MARK_TAG, mark)
     .replace(CSS_TAG, `<style>\n${css}</style>`)
     .replace(THREE_TAG, `<script>\n${safe(three)}\n</script>`)
     .replace(MAIN_TAG, `<script>\n${safe(app)}</script>`);

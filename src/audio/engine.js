@@ -6,14 +6,16 @@ import {
   SPB, STEP, BAR, SECTIONS, TOTAL_STEPS, DURATION,
   PROG, ARP, LEAD, PHRASE, mtof, frand, sectionOfBar, intensityAt
 } from './arrangement.js';
+import { MusicFeatures, emptyFeatures } from './features.js';
 
 export const Audio = {
   ctx:null, ready:false, playing:false, mode:'synth',
   startAt:0, nextStep:0, timer:null, live:new Set(),
-  events:[], bus:{}, analyser:null, freq:null, wave:null,
+  events:[], bus:{}, analyser:null, freq:null, wave:null, spectrum:null,
   el:null, elSrc:null, voicing:'laptop', vol:0.8,
-  bass:0, low:0, mid:0, high:0, level:0, beat:0, beatEnv:0,
-  hist:[], lastBeat:0,
+  sub:0, bass:0, low:0, mid:0, high:0, level:0, beat:0, beatEnv:0,
+  features:emptyFeatures(), analysis:null, lastUpdate:0, reactivity:1,
+  trackName:'', loading:false, error:'', playRequest:0,
 
   init(){
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -21,10 +23,15 @@ export const Audio = {
     const c = this.ctx, B = this.bus;
 
     this.analyser = c.createAnalyser();
-    this.analyser.fftSize = 2048;
-    this.analyser.smoothingTimeConstant = 0.72;
+    this.analyser.fftSize = 4096;
+    // Temporal smoothing belongs to features.js, in seconds. Browser FFT
+    // smoothing plus per-frame lerps would blur every attack twice.
+    this.analyser.smoothingTimeConstant = 0;
     this.freq = new Uint8Array(this.analyser.frequencyBinCount);
-    this.wave = new Uint8Array(this.analyser.frequencyBinCount);
+    this.spectrum = new Float32Array(this.analyser.frequencyBinCount);
+    this.wave = new Float32Array(this.analyser.fftSize);
+    this.analysis = new MusicFeatures({ sampleRate:c.sampleRate, fftSize:this.analyser.fftSize });
+    this.features = this.analysis.data;
 
     /* ---- master chain -------------------------------------------------
        sum -> rumble filter -> tone -> glue -> saturation -> limiter -> out
@@ -175,6 +182,15 @@ export const Audio = {
   setVolume(v){
     this.vol = Math.max(0, Math.min(1, v));
     if (this.bus.master) this.bus.master.gain.setTargetAtTime(this.vol, this.ctx.currentTime, 0.02);
+  },
+  setReactivity(v){
+    this.reactivity = Number.isFinite(v) ? Math.max(0, Math.min(2, v)) : 1;
+    return this.reactivity;
+  },
+  resetAnalysis(){
+    if (this.analysis) this.analysis.reset();
+    this.sub = this.bass = this.low = this.mid = this.high = this.level = this.beat = this.beatEnv = 0;
+    this.lastUpdate = 0;
   },
 
   noiseBuf(sec){
@@ -684,7 +700,12 @@ export const Audio = {
 
   start(){
     if (!this.ready) this.init();
-    this.ctx.resume();
+    ++this.playRequest;
+    if (this.el) this.el.pause();
+    this.killLive();
+    this.resetAnalysis();
+    this.trackName = ''; this.loading = false; this.error = '';
+    this.ctx.resume().catch(e => this.playbackError(e));
     this.mode = 'synth';
     this.startAt = this.ctx.currentTime + 0.12;
     this.nextStep = 0;
@@ -699,7 +720,14 @@ export const Audio = {
     if (this.bus.duck){ this.bus.duck.gain.cancelScheduledValues(this.ctx.currentTime); this.bus.duck.gain.value = 1; }
   },
   seek(sec){
-    if (this.mode === 'file'){ if (this.el) this.el.currentTime = Math.max(0, Math.min(sec, this.el.duration || 0)); return; }
+    if (!Number.isFinite(sec)) return;
+    this.resetAnalysis();
+    if (this.mode === 'file'){
+      if (this.el && Number.isFinite(this.el.duration))
+        this.el.currentTime = Math.max(0, Math.min(sec, this.el.duration));
+      return;
+    }
+    if (!this.ctx) return;
     sec = Math.max(0, Math.min(sec, DURATION - 0.5));
     this.killLive();
     this.startAt = this.ctx.currentTime + 0.06 - sec;
@@ -707,21 +735,57 @@ export const Audio = {
   },
   toggle(){
     if (!this.ctx) return this.playing;
-    if (this.ctx.state === 'running'){ this.ctx.suspend(); if (this.el) this.el.pause(); this.playing = false; }
-    else { this.ctx.resume(); if (this.el && this.mode === 'file') this.el.play(); this.playing = true; }
+    // The requested state is authoritative while resume/suspend are pending.
+    // Reading ctx.state here made a quick double tap pause twice.
+    if (this.playing){
+      ++this.playRequest;
+      this.playing = false; this.loading = false;
+      if (this.el) this.el.pause();
+      this.ctx.suspend().catch(e => this.playbackError(e));
+    } else if (this.el && this.mode === 'file') this.playFile();
+    else {
+      this.playing = true; this.error = '';
+      this.ctx.resume().catch(e => this.playbackError(e));
+    }
     return this.playing;
   },
   time(){
     if (this.mode === 'file') return this.el ? this.el.currentTime : 0;
     return this.ctx ? Math.max(0, Math.min(this.ctx.currentTime - this.startAt, DURATION)) : 0;
   },
-  duration(){ return this.mode === 'file' ? (this.el && this.el.duration ? this.el.duration : 1) : DURATION; },
+  duration(){
+    if (this.mode !== 'file') return DURATION;
+    return this.el && Number.isFinite(this.el.duration) && this.el.duration > 0 ? this.el.duration : 1;
+  },
+  progress(){ return Math.max(0, Math.min(1, this.time() / this.duration())); },
+
+  playbackError(e){
+    this.playing = false; this.loading = false;
+    this.error = e?.name === 'NotAllowedError'
+      ? 'Playback needs a tap. Press play to continue.'
+      : 'This audio file could not be played. Try another file.';
+  },
+  playFile(){
+    const request = ++this.playRequest;
+    this.playing = true; this.loading = true; this.error = '';
+    // Invoke both synchronously in the gesture, especially for mobile Safari.
+    return Promise.all([this.ctx.resume(), this.el.play()]).then(() => {
+      if (request !== this.playRequest || this.mode !== 'file') return false;
+      this.loading = false;
+      return true;
+    }).catch(e => {
+      // Loading a replacement or pausing intentionally aborts the old play.
+      if (request === this.playRequest) this.playbackError(e);
+      return false;
+    });
+  },
 
   loadFile(f){
     if (!this.ready) this.init();
-    this.ctx.resume();
     clearInterval(this.timer);
     this.killLive();
+    this.resetAnalysis();
+    ++this.playRequest;
     this.mode = 'file';
     if (!this.el){
       this.el = new window.Audio();
@@ -733,43 +797,42 @@ export const Audio = {
       const g = this.ctx.createGain(); g.gain.value = 0.95;
       // into the sum, so a loaded track gets the same speaker voicing
       this.elSrc.connect(g); g.connect(this.bus.sum);
+      this.el.onwaiting = () => { if (this.mode === 'file' && this.playing) this.loading = true; };
+      this.el.onplaying = () => { if (this.mode === 'file') this.loading = false; };
+      this.el.onerror = () => { if (this.mode === 'file') this.playbackError(this.el.error); };
     }
-    if (this.elUrl) URL.revokeObjectURL(this.elUrl);
+    this.el.pause();
+    const previousUrl = this.elUrl;
     this.elUrl = URL.createObjectURL(f);
+    this.trackName = f.name || 'Your track';
     this.el.src = this.elUrl;
-    this.el.play().catch(() => {});
-    this.playing = true;
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    return this.playFile();
   },
 
-  update(){
-    if (!this.analyser) return;
-    this.analyser.getByteFrequencyData(this.freq);
-    const f = this.freq, n = f.length;
-    const avg = (a, b) => { let s = 0; for (let i = a; i < b; i++) s += f[i]; return s / (b - a) / 255; };
-    // bands shifted up: with no kick drum the useful low energy lives in the
-    // organ/timpani fundamentals around 60-250 Hz, not down at 20
-    const tgt = {
-      bass: Math.pow(avg(2, 12), 1.25),
-      low:  avg(12, 32),
-      mid:  avg(32, 120),
-      high: avg(120, Math.min(430, n))
-    };
-    const k = (cur, t, up, dn) => t > cur ? cur + (t - cur) * up : cur + (t - cur) * dn;
-    this.bass = k(this.bass, tgt.bass, 0.55, 0.10);
-    this.low  = k(this.low,  tgt.low,  0.45, 0.10);
-    this.mid  = k(this.mid,  tgt.mid,  0.35, 0.09);
-    this.high = k(this.high, tgt.high, 0.40, 0.10);
-    this.level = (this.bass * 1.3 + this.low + this.mid * 0.8 + this.high * 0.5) / 3.6;
-
-    // beat detection (used for user-loaded audio)
-    const e = tgt.bass;
-    this.hist.push(e); if (this.hist.length > 45) this.hist.shift();
-    let m = 0; for (const v of this.hist) m += v; m /= this.hist.length || 1;
-    const t = performance.now();
-    this.beat = 0;
-    if (this.mode === 'file' && e > m * 1.42 && e > 0.16 && t - this.lastBeat > 190){
-      this.lastBeat = t; this.beat = Math.min(1, e * 1.6);
-    }
+  update(dt){
+    if (!this.analyser || !this.analysis) return;
+    const now = performance.now() / 1000;
+    if (!Number.isFinite(dt)) dt = this.lastUpdate ? now - this.lastUpdate : 1 / 60;
+    this.lastUpdate = now;
+    const active = this.playing && this.ctx.state === 'running' && !this.loading;
+    if (active){
+      this.analyser.getByteFrequencyData(this.freq);
+      this.analyser.getFloatFrequencyData(this.spectrum);
+      this.analyser.getFloatTimeDomainData(this.wave);
+    } else this.freq.fill(0);
+    const latency = this.ctx.outputLatency || this.ctx.baseLatency || 0;
+    const f = this.analysis.update(this.spectrum, this.wave, dt, {
+      playing:active, reactivity:this.reactivity,
+      knownPeriod:this.mode === 'synth' ? SPB : 0,
+      position:Math.max(0, this.time() - latency)
+    });
+    this.sub = f.sub; this.bass = f.bass; this.low = f.low;
+    this.mid = f.mid; this.high = f.high;
+    // Keep the original fields for the camera and third-party integrations.
+    this.level = (f.bass * 1.3 + f.low + f.mid * 0.8 + f.high * 0.5) / 3.6;
+    this.beat = this.mode === 'file' ? f.onset : 0;
+    this.beatEnv = f.beatEnv;
   },
 
   popEvents(cb){
