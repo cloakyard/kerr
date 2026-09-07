@@ -32,7 +32,7 @@ A single page that explores a Gargantua-inspired black hole and plays a four-min
 - **🌀 Relativistic raymarching** — an adaptive RK4 integrator bends a single emitting and absorbing disk volume into its over-and-under images. The inner light comes from material encountered along the rays; there is no added photon-ring outline. Finite ray budgets and spin remain approximations.
 - **🔥 A structured accretion disk** — DNEG-inspired annulus geometry (`r = 9.26M` to `18.70M`), differential rotation, turbulent dark lanes, and fine filaments throughout an emitting and absorbing volume. Controlled bloom, lens streaks, and a restrained star field shape the glow around the shadow.
 - **🎼 A live score** — pipe organ, strings, choir formants, a bell arpeggio, timpani and a clock tick, sequenced through ten sections in D minor by a Web Audio graph of oscillators and filters. Intensity is one continuous curve across the four minutes, so sections hand over instead of restarting.
-- **🎚️ Three output voicings, picked for you** — the same performance re-mixed for built-in speakers, powered monitors or headphones, chosen automatically and overridable in one tap. A real signal-path change, not a preset name.
+- **🎚️ Three output voicings** — the same performance re-mixed for built-in speakers, powered monitors or headphones. Auto recognizes clear output labels when available, explains its fallback otherwise, and can be overridden in one tap. A real signal-path change, not a preset name.
 - **🎧 Bring your own audio** — choose or drop a supported audio file. Five frequency bands, spectral-flux onset detection, and a confidence-gated tempo estimate drive the scene; return to the original score from the player.
 - **🎛️ Direct the experience** — Film, close-passage, oblique, exact edge-on, top-down, and underside views; unrestricted drag through both poles; Gargantua, Ember, and Polar palettes; independent music-response intensity; and a cinema mode with a keyboard-accessible exit.
 - **📲 Installable, and it works on a plane** — install it and the whole thing runs offline, because "the whole thing" is one document with no runtime assets to miss.
@@ -138,11 +138,11 @@ Built-in trades sub energy for the harmonics that imply it, and covers laptop an
 
 ### What Auto can and cannot know
 
-Auto is the default, and honest about being a guess. **Exactly one signal decides it: `AudioContext.outputLatency`** — around 10 ms on a built-in output, past 100 ms over a wireless link, with the line drawn at 60 ms. Wireless proves the output is *not* the built-in speaker, but not whether it is earbuds or powered monitors; earbuds are far more common, so that is the guess. `enumerateDevices()` would say more, except it returns one entry with an empty label and id until the page holds a **microphone** permission — and prompting for the mic to choose an EQ curve is not a trade worth making.
+Auto reads output labels already exposed by `enumerateDevices()` and matches only the active `AudioContext.sinkId`, or the system-default entry when the context follows the default. An attached headset is not evidence that it is playing. Clear headphone, built-in speaker and external speaker labels select their respective voicings; generic audio ports, combined speaker/headphone endpoints and unknown model names do not reveal the transducer at the other end.
 
-So Auto picks **built-in**, switches to **headphones** when the link goes wireless, and never guesses **Speakers**: nothing on the web can spot a KEF LSX II on the end of a cable, so powered monitors stay a deliberate tap. Device class — handheld versus laptop, from UA Client Hints and touch points — is detected too, but it only changes the *wording* of the caption under the buttons, never the voicing; both land on Built-in, which suits small drivers either way.
+**Latency does not identify the output.** The old 60 ms rule mislabeled buffered speakers as headphones and missed wired headphones. [`outputLatency` measures delivery delay](https://www.w3.org/TR/webaudio-1.1/#dom-audiocontext-outputlatency), so it no longer selects an EQ curve. When the browser hides the device identity, Auto uses the conservative **Built-in** mix and explicitly says the output type is unavailable. Choose Speakers or Headphones yourself in that case. KERR never requests microphone permission, changes the system output, or saves device names or IDs. Browser permissions and privacy rules limit which [output metadata can be exposed](https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-enumeratedevices).
 
-Two limits. `outputLatency` reads 0 until the AudioContext is running, so the wireless check cannot happen before the first gesture — Auto opens on Built-in and re-voices once there is something to measure. And it only re-checks while Auto is in charge: pick a mode yourself and Auto stands down, the choice is remembered, and a device change will not second-guess it.
+Auto refreshes after device changes, context startup/resume, output-sink changes and returning to the page. A two-second check while the page is visible and the context is running catches route changes whose events are delayed or missing. Stale asynchronous results cannot override a newer output or a manual selection, and unchanged results do not restart the audio ramps. A manual choice is remembered and always takes precedence. The intro caption and the live Auto button's tooltip and accessible label explain the current choice.
 
 ---
 
@@ -193,7 +193,7 @@ src/
     experience.js      shot, palette, response and cinema controls
     events.js          audio events → shockwave, shake, flash, pull
     hud.js             map, telemetry, spectrum, title cards
-    output.js          the Auto voicing heuristic, as a pure function
+    output.js          active-output label classification, as a pure function
     input.js · shortcuts.js · voicing.js · dropzone.js
 ```
 
@@ -242,7 +242,7 @@ Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste th
 | **Arrangement** | 120 bars and exactly four minutes; contiguous sections with types the camera knows; the intensity curve continuous at all nine boundaries; the lead agreeing with its harmony |
 | **Kerr geometry** | horizon and ISCO against published values — 6M at `a = 0`, 4.2330M at `a = 0.5`, 2.3209M at `a = 0.9` |
 | **Adaptive quality** | never leaves its band under 20,000 random frame rates; settles at both ends; survives `NaN` |
-| **Auto voicing** | the iPadOS-presents-as-a-Mac case, and that powered speakers are never guessed |
+| **Auto voicing** | active/default sink matching, wired headphones and external speakers, unknown-output fallback, route changes, async races and manual overrides |
 | **Music analysis and transport** | silence, bounded frequency envelopes, time-based smoothing, onset/tempo recovery, source switching and rejected playback |
 | **Reduced-motion camera** | stable automatic framing through a loud section, manual shot/zoom access, and a valid portrait camera basis |
 | **All-angle camera** | exact cardinal angles, finite orthonormal frames at both poles, continuous full turns, steady inspection views, and resumed cinematic drift after touch release/cancellation |
@@ -296,7 +296,7 @@ The guarantee is unchanged and still browser-enforced. [`test/pwa.test.js`](test
 
 ## ⚙️ Performance
 
-The whole application is one 625 KB document — **139 KB over the wire** after brotli — served in a single request with no dependency waterfall.
+The whole application is one 626 KB document — **139 KB over the wire** after brotli — served in a single request with no dependency waterfall.
 
 The renderer measures real elapsed frame time and trades resolution scale against march step count toward a 60 fps target, between `0.5×/96` steps and `0.92×/220`. Achieved frame rate depends on the browser, viewport and GPU; automated SwiftShader tests are correctness checks, not a hardware benchmark. Hidden tabs skip rendering and reset timing when visibility changes.
 

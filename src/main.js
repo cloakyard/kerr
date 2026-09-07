@@ -53,8 +53,8 @@ installExperience({
 function begin(fn){
   if (!Audio.ready) Audio.init();
   fn ? fn() : Audio.start();
-  // first gesture: the context is finally running, so outputLatency can be read
-  setTimeout(() => refreshAuto(true), 350);
+  // Attach output listeners immediately; statechange also rechecks on resume.
+  void refreshAuto(true);
   if (started){ buildMap(); return; }
   started = true;
   revealHud();
