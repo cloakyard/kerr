@@ -91,6 +91,26 @@ test('dragged orientation remains held through the opposite hemisphere and loud 
   near(cur.kerr, 0.6, 'music must not change the black hole spin');
 });
 
+test('Film and Close passage resume their star-field drift after a drag releases', () => {
+  for (const shot of ['cinematic', 'close']) {
+    resetCamera(shot);
+    view.interacting = true;
+    orbitCamera(0.35, -0.17);
+    const chosenDistance = cur.d;
+    const first = snap(updateCamera(1 / 60, initialLook, audio, 0, { shot }));
+    let cam;
+    for (let i = 1; i <= 120; i++) cam = updateCamera(1 / 60, peak, audio, i / 60, { shot });
+    near(cam.azimuth, first.azimuth, `${shot} must not drift underneath a held finger`);
+    view.interacting = false;
+    for (let i = 121; i <= 240; i++) cam = updateCamera(1 / 60, peak, audio, i / 60, { shot });
+    assert.ok(cam.azimuth > first.azimuth + 0.02, `${shot} stars froze after the drag`);
+    near(cam.elevation, first.elevation, `${shot} must retain the dragged elevation`);
+    near(cur.d, chosenDistance, `${shot} must not snap back to score framing`);
+    near(cam.fov, first.fov, `${shot} must retain the chosen field of view`);
+    validBasis(cam);
+  }
+});
+
 test('complete manual turns return to the same geometry and reset restores the chosen pole', () => {
   resetCamera('top'); orbitCamera(0.4, 0.3);
   const first = snap(updateCamera(1 / 60, peak, audio, 0, { shot:'top' }));

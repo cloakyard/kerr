@@ -407,6 +407,77 @@ test('exact edge-on and polar views retain the volume and the appropriate shadow
   assert.ok(ratio > .4 && ratio < 2.5, 'one hemisphere became dark or grossly overexposed');
 });
 
+test('touch release, cancellation and capture loss resume cinematic star motion', { skip: skip() }, async t => {
+  // Read the camera actually uploaded to the ray shader. This observes the
+  // production input/render path without exposing or changing camera state.
+  await page.eval(`(() => {
+    if (document.body.classList.contains('boot')) document.getElementById('go').click();
+    if (document.getElementById('bPause').getAttribute('aria-label') === 'Pause') document.getElementById('bPause').click();
+    const canvas = document.getElementById('gl'), gl = canvas.getContext('webgl2');
+    const useProgram = gl.useProgram;
+    let program, location, pointerId, captureLosses = 0;
+    const remember = e => { pointerId = e.pointerId; };
+    const lost = () => { captureLosses++; };
+    canvas.addEventListener('pointerdown', remember);
+    canvas.addEventListener('lostpointercapture', lost);
+    gl.useProgram = function(p) {
+      useProgram.call(this, p);
+      if (!location && p) {
+        const found = gl.getUniformLocation(p, 'uCamPos');
+        if (found) { program = p; location = found; }
+      }
+    };
+    window.__orbitProbe = {
+      read: (frames = 1) => new Promise(resolve => {
+        const next = () => {
+          if (--frames > 0) return requestAnimationFrame(next);
+          const p = gl.getUniform(program, location);
+          resolve(Math.atan2(p[2], p[0]));
+        };
+        requestAnimationFrame(next);
+      }),
+      loseCapture: () => { captureLosses = 0; canvas.releasePointerCapture(pointerId); },
+      captureLosses: () => captureLosses,
+      restore: () => { gl.useProgram = useProgram; canvas.removeEventListener('pointerdown', remember); canvas.removeEventListener('lostpointercapture', lost); }
+    };
+  })()`);
+  let touchActive = false;
+  const send = async (type, points) => {
+    await page.send('Input.dispatchTouchEvent', { type, touchPoints:points });
+    touchActive = points.length > 0;
+  };
+  const read = frames => page.eval(`window.__orbitProbe.read(${frames})`);
+  const movement = (a, b) => Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a)));
+  try {
+    await page.send('Emulation.setTouchEmulationEnabled', { enabled:true, maxTouchPoints:5 });
+    const point = await page.eval(`({ x:innerWidth * .5, y:innerHeight * .25, id:1 })`);
+    const moved = { ...point, x:point.x + 35, y:point.y + 8 };
+    for (const ending of ['touchEnd', 'touchCancel', 'lostpointercapture']) {
+      await page.eval(`document.getElementById('bReset').click()`);
+      await send('touchStart', [point]);
+      await send('touchMove', [moved]);
+      const held = await read(2), stillHeld = await read(8);
+      assert.ok(movement(held, stillHeld) < 1e-5, 'camera drifted underneath a held touch');
+      if (ending === 'lostpointercapture') {
+        await page.eval(`window.__orbitProbe.loseCapture()`);
+        // Capture release takes effect when the next pointer event processes
+        // the pending override; requesting it alone is not a capture-loss event.
+        await send('touchMove', [{ ...moved, x:moved.x + 1 }]);
+      } else await send(ending, []);
+      const released = await read(2), later = await read(12);
+      if (ending === 'lostpointercapture') assert.ok(await page.eval(`window.__orbitProbe.captureLosses()`) > 0,
+        'the test must actually dispatch lostpointercapture');
+      assert.ok(movement(released, later) > 0.001, `${ending} left the stars frozen`);
+      t.diagnostic(`${ending}: camera advanced ${movement(released, later).toFixed(5)} radians after release`);
+      if (ending === 'lostpointercapture') await send('touchEnd', []);
+    }
+  } finally {
+    if (touchActive) await send('touchCancel', []);
+    await page.send('Emulation.setTouchEmulationEnabled', { enabled:false });
+    await page.eval(`window.__orbitProbe.restore(); delete window.__orbitProbe; document.getElementById('bReset').click()`);
+  }
+});
+
 test('still no errors after interacting', { skip: skip() }, () => {
   assert.deepEqual(errors, [], 'errors appeared during playback:\n' + errors.join('\n'));
 });
