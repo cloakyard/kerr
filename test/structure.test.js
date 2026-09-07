@@ -148,7 +148,7 @@ test('no module exports something nothing imports', async () => {
   }
   /* Constants the tests import to assert against rather than re-hardcoding.
      Exporting them is deliberate; anything else on this list is dead API. */
-  const FOR_TESTS = new Set(['BPM', 'WIRELESS_LATENCY', 'SPIN_MAX', 'DISK_IN']);
+  const FOR_TESTS = new Set(['BPM', 'SPIN_MAX', 'DISK_IN']);
   const dead = [];
   for (const f of files) {
     const used = imported.get(f) || new Set();
