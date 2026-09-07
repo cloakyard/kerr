@@ -11,7 +11,7 @@ globalThis.innerWidth = 1280;
 globalThis.innerHeight = 720;
 await import('../vendor/three.bundle.js');
 const { REDUCED } = await import('../src/motion.js');
-const { cur, view, currentPreset, updateCamera } = await import('../src/direct/camera.js');
+const { cur, view, currentPreset, updateCamera, orbitCamera, resetCamera } = await import('../src/direct/camera.js');
 const initialView = { ...view }, initialLook = { ...cur };
 const audio = { mode:'synth', level:1, bass:1, mid:1, high:1, sectionOfBar };
 
@@ -55,6 +55,17 @@ test('reduced motion preserves explicit shot selection and manual zoom', () => {
   assert.ok(Math.abs(cam.dist / closeDistance - 1.5) < 1e-8, 'manual zoom was suppressed');
   assert.equal(cam.orbT, 0);
   assert.equal(cam.flowT, 0);
+});
+
+test('releasing a manual drag does not restore automatic drift with reduced motion', () => {
+  for (const shot of ['cinematic', 'close']) {
+    resetCamera(shot);
+    orbitCamera(0.35, -0.17);
+    const first = snapshot(updateCamera(1 / 60, initialLook, audio, 0, { shot }));
+    let cam;
+    for (let i = 1; i <= 120; i++) cam = updateCamera(1 / 60, initialLook, audio, i / 60, { shot });
+    assert.deepEqual(snapshot(cam), first, `${shot} restarted motion after a drag`);
+  }
 });
 
 test('portrait framing pulls back while preserving a valid camera basis', () => {

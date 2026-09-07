@@ -42,7 +42,8 @@ export const view = {
   pull: 0, pullV: 0,        // camera fall: a damped spring, not a decay
   orbT: 0, flowT: 0,        // accumulated orbit / accretion clocks
   idleT: 0,
-  key: 'intro', shot: 'cinematic', manual: false, screenX: 0, screenY: 0, framing: 1
+  key: 'intro', shot: 'cinematic', manual: false, interacting: false,
+  screenX: 0, screenY: 0, framing: 1
 };
 
 const tmp = new THREE.Vector3();
@@ -111,7 +112,8 @@ export function updateCamera(dt, p, audio, time, experience = {}, boot = false){
   const shotName = Object.hasOwn(SHOTS, experience.shot) ? experience.shot : 'cinematic';
   if (shotName !== view.shot) resetCamera(shotName);
   const shot = SHOTS[shotName];
-  const inspect = view.manual || (shotName !== 'cinematic' && shotName !== 'close');
+  const cinematic = shotName === 'cinematic' || shotName === 'close';
+  const inspect = view.manual || !cinematic;
   const base = REDUCED && experience.response !== 0 ? p : CAM.intro;
   // ease the whole cinematic state toward the section preset
   const k = 1 - Math.pow(0.06, dt);
@@ -154,7 +156,10 @@ export function updateCamera(dt, p, audio, time, experience = {}, boot = false){
   // so a change of rate never snaps a particle to a new position.
   view.orbT  += dt * (0.7 + audio.mid * 0.7 + audio.level * 0.35 + Math.max(0, view.pull) * 1.2) * REDUCED;
   view.flowT += dt * cur.flow * (1 + Math.max(0, view.pull) * 14) * REDUCED;
-  view.azim += (inspect ? 0 : cur.spin + audio.level * 0.025) * dt * REDUCED;
+  // A drag holds the chosen elevation, distance and FOV, not the life of the
+  // cinematic sky. Pause its orbit while a pointer is down, then continue from
+  // the released angle. Inspection presets and reduced motion stay stationary.
+  view.azim += (cinematic && !view.interacting ? cur.spin + audio.level * 0.025 : 0) * dt * REDUCED;
 
   const cameraMotion = inspect ? 0 : REDUCED;
   const breath = (Math.sin(time * 0.14) * 0.018 + Math.sin(time * 0.07) * 0.012) * cameraMotion;

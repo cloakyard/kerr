@@ -15,12 +15,14 @@ function pinchSpan(){
 
 canvas.addEventListener('pointerdown', e => {
   pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  view.interacting = true;
   px = e.clientX; py = e.clientY; view.idleT = 0;
   canvas.setPointerCapture(e.pointerId);
   if (pointers.size === 2) pinchDist = pinchSpan();
 });
 const endPointer = e => {
   pointers.delete(e.pointerId); pinchDist = 0;
+  view.interacting = pointers.size > 0;
   // When one finger remains after a pinch, resume at its current position.
   // Reusing the first finger's old origin made the camera jump hemispheres.
   if (pointers.size === 1){
@@ -30,6 +32,10 @@ const endPointer = e => {
 };
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('lostpointercapture', endPointer);
+addEventListener('blur', () => {
+  pointers.clear(); pinchDist = 0; view.interacting = false;
+});
 
 canvas.addEventListener('pointermove', e => {
   view.idleT = 0;
