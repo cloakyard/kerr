@@ -35,6 +35,9 @@ export function installDropZone(onFile){
   $('own').onclick = () => $('file').click();
   $('file').onchange = e => {
     const f = e.target.files[0];
+    // Clearing the picker allows the same file to be selected after a retry
+    // or a return to the score; the retained File is independent of this value.
+    e.target.value = '';
     if (f) onFile(f);
   };
 }

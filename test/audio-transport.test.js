@@ -127,3 +127,69 @@ test('reactivity stays in range and invalid settings recover to the default', ()
   assert.equal(audio.setReactivity(99), 2);
   assert.equal(audio.setReactivity(NaN), 1);
 });
+
+test('a delayed score resume error cannot stop a newer imported track', async t => {
+  const { audio } = fixture();
+  let rejectResume;
+  audio.ctx.resume = () => new Promise((resolve, reject) => { rejectResume = reject; });
+  audio.start();
+  clearInterval(audio.timer);
+  audio.ctx.resume = () => Promise.resolve();
+  t.mock.method(URL, 'createObjectURL', () => 'blob:new-track');
+  await audio.loadFile({ name:'New.wav' });
+  rejectResume({ name:'NotAllowedError' });
+  await Promise.resolve();
+  assert.equal(audio.playing, true);
+  assert.equal(audio.error, '');
+  assert.equal(audio.trackName, 'New.wav');
+});
+
+test('a delayed suspend error cannot undo a newer resume', async () => {
+  const { audio } = fixture();
+  audio.mode = 'synth';
+  let rejectSuspend;
+  audio.ctx.suspend = () => new Promise((resolve, reject) => { rejectSuspend = reject; });
+  audio.toggle();
+  audio.toggle();
+  rejectSuspend({ name:'InvalidStateError' });
+  await Promise.resolve();
+  assert.equal(audio.playing, true);
+  assert.equal(audio.error, '');
+});
+
+test('a failed context resume stops the file transport as well as the UI', async () => {
+  const { audio, calls } = fixture();
+  audio.ctx.resume = () => Promise.reject({ name:'NotAllowedError' });
+  assert.equal(await audio.playFile(), false);
+  assert.equal(audio.playing, false);
+  assert.equal(calls.paused, 1, 'a failed request must not leave the media timeline advancing');
+});
+
+test('a delayed scheduler skips missed notes instead of playing them all at once', () => {
+  const { audio } = fixture();
+  Object.assign(audio, { mode:'synth', startAt:0, nextStep:0 });
+  audio.ctx.currentTime = 12.1;
+  const scheduled = [];
+  audio.scheduleStep = (step, time) => scheduled.push({step, time});
+  audio.tick();
+  assert.ok(scheduled.length > 0 && scheduled.length <= 3, 'missed score history was scheduled as a burst');
+  assert.ok(scheduled.every(note => note.time >= 12.1 && note.time <= 12.35));
+  assert.ok(scheduled.every(note => note.step >= 97), 'a note from before the current beat was replayed');
+});
+
+test('overdue visual beats expire instead of bursting when rendering resumes', () => {
+  const { audio } = fixture();
+  audio.events = [{t:2, kind:'impact'}, {t:9.9, kind:'kick'}, {t:10.2, kind:'snare'}];
+  const received = [];
+  audio.popEvents(event => received.push(event.kind));
+  assert.deepEqual(received, ['kick']);
+  assert.deepEqual(audio.events, [{t:10.2, kind:'snare'}]);
+});
+
+test('visual events arriving in the same frame retain their musical order', () => {
+  const { audio } = fixture();
+  audio.events = [{t:9.8, kind:'section'}, {t:9.9, kind:'impact'}];
+  const received = [];
+  audio.popEvents(event => received.push(event.kind));
+  assert.deepEqual(received, ['section', 'impact']);
+});

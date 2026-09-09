@@ -30,10 +30,10 @@ import { build } from './build.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// vendor/three.bundle.js — three r185, tree-shaken from src/three-entry.js by
+// vendor/three.bundle.js — three r186, tree-shaken from src/three-entry.js by
 // `npm run vendor:three`. It is committed so the app build needs no network;
 // the hash is here so a stale or hand-edited bundle cannot ship unnoticed.
-const THREE_SHA256 = '3aa7573af497d2b8f3008d131c78034bb7b7f37a9c4540aaa479b9e919103d8d';
+const THREE_SHA256 = 'ed0128c0ee5f10f96f3b2e80df1699bad15c629ab76e8bf3239e01a8fac9ea26';
 
 const fail = [];
 const ok = (m) => console.log(`  ✓ ${m}`);

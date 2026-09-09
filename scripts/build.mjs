@@ -65,7 +65,7 @@ export async function build({ dev = false, outDir = DIST } = {}) {
   const app = out.outputFiles[0].text;
 
   const html = await readFile(join(SRC, 'index.html'), 'utf8');
-  const css = await readFile(join(SRC, 'styles.css'), 'utf8');
+  let css = await readFile(join(SRC, 'styles.css'), 'utf8');
   const three = await readFile(VENDOR, 'utf8');
   const mark = (await readFile(join(PUBLIC, 'logo.svg'), 'utf8')).trim()
     .replace('role="img" aria-label="KERR"', 'class="brand-mark" aria-hidden="true"');
@@ -80,12 +80,15 @@ export async function build({ dev = false, outDir = DIST } = {}) {
       throw new Error(`${name} tag not found in src/index.html — did the path change?\n  expected: ${tag}`);
   }
   if (/<\/style/i.test(css)) throw new Error('src/styles.css contains "</style" and cannot be inlined');
+  if (!dev) css = (await esbuild.transform(css, {loader:'css', minify:true, target:'es2020'})).code;
 
+  // Payloads can contain JavaScript replacement patterns such as $& and $`.
+  // Return them from callbacks so String.replace inserts the bytes literally.
   const page = html
-    .replace(MARK_TAG, mark)
-    .replace(CSS_TAG, `<style>\n${css}</style>`)
-    .replace(THREE_TAG, `<script>\n${safe(three)}\n</script>`)
-    .replace(MAIN_TAG, `<script>\n${safe(app)}</script>`);
+    .replace(MARK_TAG, () => mark)
+    .replace(CSS_TAG, () => `<style>\n${css}</style>`)
+    .replace(THREE_TAG, () => `<script>\n${safe(three)}\n</script>`)
+    .replace(MAIN_TAG, () => `<script>\n${safe(app)}</script>`);
 
   const stray = externalLoads(page);
   if (stray.length) throw new Error('external references would break the CSP:\n  ' + stray.join('\n  '));

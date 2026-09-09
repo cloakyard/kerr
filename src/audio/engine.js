@@ -689,6 +689,10 @@ export const Audio = {
   tick(){
     if (this.mode !== 'synth' || !this.playing) return;
     const c = this.ctx, ahead = 0.25;
+    // Background throttling can miss many beats. Resume at the next beat
+    // instead of scheduling the entire missed passage at currentTime.
+    if (this.startAt + this.nextStep * STEP < c.currentTime - STEP)
+      this.nextStep = Math.min(TOTAL_STEPS, Math.ceil((c.currentTime - this.startAt) / STEP));
     while (this.nextStep < TOTAL_STEPS){
       const t = this.startAt + this.nextStep * STEP;
       if (t > c.currentTime + ahead) break;
@@ -700,12 +704,12 @@ export const Audio = {
 
   start(){
     if (!this.ready) this.init();
-    ++this.playRequest;
+    const request = ++this.playRequest;
     if (this.el) this.el.pause();
     this.killLive();
     this.resetAnalysis();
     this.trackName = ''; this.loading = false; this.error = '';
-    this.ctx.resume().catch(e => this.playbackError(e));
+    this.ctx.resume().catch(e => this.playbackError(e, request));
     this.mode = 'synth';
     this.startAt = this.ctx.currentTime + 0.12;
     this.nextStep = 0;
@@ -735,17 +739,17 @@ export const Audio = {
   },
   toggle(){
     if (!this.ctx) return this.playing;
+    const request = ++this.playRequest;
     // The requested state is authoritative while resume/suspend are pending.
     // Reading ctx.state here made a quick double tap pause twice.
     if (this.playing){
-      ++this.playRequest;
       this.playing = false; this.loading = false;
       if (this.el) this.el.pause();
-      this.ctx.suspend().catch(e => this.playbackError(e));
+      this.ctx.suspend().catch(e => this.playbackError(e, request));
     } else if (this.el && this.mode === 'file') this.playFile();
     else {
       this.playing = true; this.error = '';
-      this.ctx.resume().catch(e => this.playbackError(e));
+      this.ctx.resume().catch(e => this.playbackError(e, request));
     }
     return this.playing;
   },
@@ -759,11 +763,14 @@ export const Audio = {
   },
   progress(){ return Math.max(0, Math.min(1, this.time() / this.duration())); },
 
-  playbackError(e){
+  playbackError(e, request = this.playRequest){
+    if (request !== this.playRequest) return;
     this.playing = false; this.loading = false;
+    if (this.mode === 'file') this.el?.pause();
     this.error = e?.name === 'NotAllowedError'
       ? 'Playback needs a tap. Press play to continue.'
-      : 'This audio file could not be played. Try another file.';
+      : this.mode === 'file' ? 'This audio file could not be played. Try another file.'
+      : 'Audio could not start. Press play to retry.';
   },
   playFile(){
     const request = ++this.playRequest;
@@ -838,10 +845,14 @@ export const Audio = {
   popEvents(cb){
     const lat = (this.ctx.outputLatency || this.ctx.baseLatency || 0);
     const now = this.ctx.currentTime - lat;
-    for (let i = this.events.length - 1; i >= 0; i--){
+    for (let i = 0; i < this.events.length;){
       const ev = this.events[i];
-      if (ev.t <= now){ cb(ev); this.events.splice(i, 1); }
-      else if (ev.t > now + 6) this.events.splice(i, 1);
+      if (ev.t <= now || ev.t > now + 6){
+        this.events.splice(i, 1);
+        // A hidden tab can collect a whole passage. Only current beats may
+        // trigger fresh flashes, and their scheduled order must be retained.
+        if (ev.t <= now && ev.t >= now - 0.5) cb(ev);
+      } else i++;
     }
   }
 };

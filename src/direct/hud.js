@@ -71,9 +71,10 @@ const posOf = e => {
   const r = mapEl.getBoundingClientRect();
   return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
 };
-let scrubbing = false;
+let scrubPointer = null;
 mapEl.addEventListener('pointerdown', e => {
-  scrubbing = true; mapEl.setPointerCapture(e.pointerId);
+  if (e.button !== 0 || scrubPointer !== null) return;
+  scrubPointer = e.pointerId; mapEl.setPointerCapture(e.pointerId);
   Audio.seek(posOf(e) * Audio.duration());
   hintEl.classList.add('gone');
 });
@@ -83,10 +84,13 @@ mapEl.addEventListener('pointermove', e => {
   // clamped so the readout never hangs off the edge at either end
   const w = mapEl.getBoundingClientRect().width, half = scrubEl.offsetWidth / 2;
   scrubEl.style.left = Math.max(half, Math.min(w - half, f * w)) + 'px';
-  if (scrubbing) Audio.seek(f * Audio.duration());
+  if (scrubPointer === e.pointerId) Audio.seek(f * Audio.duration());
 });
-mapEl.addEventListener('pointerup', () => { scrubbing = false; });
-mapEl.addEventListener('pointercancel', () => { scrubbing = false; });
+const endScrub = e => { if (e.pointerId === scrubPointer) scrubPointer = null; };
+mapEl.addEventListener('pointerup', endScrub);
+mapEl.addEventListener('pointercancel', endScrub);
+mapEl.addEventListener('lostpointercapture', endScrub);
+addEventListener('blur', () => { scrubPointer = null; });
 mapEl.addEventListener('keydown', e => {
   const d = Audio.duration();
   if (e.code === 'Space'){ e.preventDefault(); e.stopPropagation(); $('bPause').click(); }
@@ -112,13 +116,29 @@ $('bPause').onclick = () => {
   $('bPause').classList.toggle('paused', !playing);
   $('bPause').setAttribute('aria-label', playing ? 'Pause' : 'Resume');
 };
-$('bFull').onclick = async () => {
+const fullEl = $('bFull'), fullLabel = fullEl.querySelector('.fullscreen-label');
+let fullscreenPending = false;
+function syncFullscreen(){
+  const active = !!document.fullscreenElement;
+  fullEl.classList.toggle('fullscreen', active);
+  fullLabel.textContent = active ? 'Exit fullscreen' : 'Fullscreen';
+  fullEl.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+  fullEl.title = (active ? 'Exit fullscreen' : 'Enter fullscreen') + ' (F)';
+}
+// Use browser state so Escape, browser controls and rejected requests cannot
+// leave an exit icon on a windowed view (or an enter icon in fullscreen).
+document.addEventListener('fullscreenchange', syncFullscreen);
+syncFullscreen();
+fullEl.onclick = async () => {
+  if (fullscreenPending) return;
+  fullscreenPending = true;
   try {
     if (!document.fullscreenElement){
       if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
       else toast('Fullscreen is not available in this browser');
     } else await document.exitFullscreen();
   } catch(e){ toast('Fullscreen is not available in this view'); }
+  finally { fullscreenPending = false; syncFullscreen(); }
 };
 $('bScore').onclick = () => {
   Audio.start();

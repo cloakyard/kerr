@@ -11,9 +11,9 @@ renderer.setClearColor(0x000000, 0);
 /* Colour management off, output left linear.
    three enabled automatic colour management in r152 and defaults
    outputColorSpace to sRGB. Every shader here is hand-written and already
-   ends in an ACES tonemap plus a gamma encode, so letting three convert
-   again would apply the transform twice. This reproduces the r128 default
-   (LinearEncoding) explicitly rather than by accident. */
+   uses linear HDR intermediates. The compositor applies ACES and Three's
+   sRGB transfer exactly once; the resolve pass handles display-space edges
+   and grain. Letting the renderer encode again would double the transform. */
 if (THREE.ColorManagement) THREE.ColorManagement.enabled = false;
 if ('outputColorSpace' in renderer)
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace || THREE.NoColorSpace;

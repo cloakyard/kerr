@@ -9,6 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync, brotliCompressSync, constants } from 'node:zlib';
+import { Script } from 'node:vm';
 import { build } from '../scripts/build.mjs';
 import { externalLoads } from '../scripts/external.mjs';
 
@@ -37,13 +38,18 @@ test('style tags are balanced', () => {
   assert.equal((page.match(/<\/style>/gi) || []).length, 1);
 });
 
-test('the escaped close tag is the escaped form, not the literal', () => {
-  // three.js contains the string "</script>" in its source; if it ships raw,
-  // the browser ends the tag there and the app never runs
-  const body = page.slice(page.indexOf('<script>'));
-  assert.ok(!/[^\\]<\/script>[\s\S]*<\/script>[\s\S]*<\/script>/.test(body) || true);
-  const between = page.split('</script>');
-  assert.equal(between.length, 3, 'more </script> boundaries than there are scripts');
+test('inline scripts preserve the vendor payload and remain valid JavaScript', async () => {
+  const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  assert.equal(scripts.length, 2, 'expected the complete vendor and app scripts');
+  const vendor = await readFile(join(root, 'vendor', 'three.bundle.js'), 'utf8');
+  // r186 contains literal replacement patterns such as $&. A string argument
+  // to HTML.replace() expands those into HTML, corrupting otherwise valid JS.
+  // Escaping closing tags must be the only change to the vendor's bytes.
+  const expected = '\n' + vendor.replace(/<\/script>/gi, '<\\/script>') + '\n';
+  assert.ok(scripts[0] === expected, 'inlining changed vendor bytes beyond escaping closing script tags');
+  for (const [index, source] of scripts.entries()) {
+    assert.doesNotThrow(() => new Script(source), `inline script ${index + 1} is not valid JavaScript`);
+  }
 });
 
 test('the shaders made it into the bundle', () => {
@@ -59,10 +65,10 @@ test('the disk chroma survived minification as a literal', () => {
 });
 
 test('the noise helpers appear once per shader that includes them, not more', () => {
-  // bh.frag and final.frag both include noise.glsl — two copies total, in two
-  // separate translation units. Three would mean an include was expanded twice
-  // inside one shader, which is a redeclaration error at compile time.
-  assert.equal((page.match(/float hash21\(/g) || []).length, 2);
+  // The volume's 3D noise and the resolve's grain each carry just the helpers
+  // they use; neither should expand an include twice in its translation unit.
+  assert.equal((page.match(/float hash21\(/g) || []).length, 1);
+  assert.equal((page.match(/float hash31\(/g) || []).length, 1);
 });
 
 test('the social card metadata is intact', () => {
