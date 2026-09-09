@@ -1,9 +1,8 @@
 precision highp float; varying vec2 vUv;
-uniform sampler2D uScene, uBloom, uFlare;
-uniform vec2 uRes, uBhUv;
-uniform float uAspect, uCA, uExposure, uTime, uGrain, uFlash, uBloomAmt, uFlareAmt;
+uniform sampler2D uScene, uBloom, uBloomWide, uFlare;
+uniform vec2 uBhUv;
+uniform float uAspect, uCA, uExposure, uFlash, uBloomAmt, uFlareAmt;
 uniform float uStreak;
-#include "noise.glsl"
 vec3 aces(vec3 x){
   return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0);
 }
@@ -16,7 +15,7 @@ void main(){
   c.r = texture2D(uScene, uv + d * amt).r;
   c.g = texture2D(uScene, uv).g;
   c.b = texture2D(uScene, uv - d * amt).b;
-  c += texture2D(uBloom, uv).rgb * uBloomAmt;
+  c += (texture2D(uBloom, uv).rgb * 0.45 + texture2D(uBloomWide, uv).rgb * 0.55) * uBloomAmt;
   // A restrained horizontal optical streak, sourced from actual highlights.
   // This reuses the eighth-resolution flare instead of another full pass.
   vec3 streak = vec3(0.0);
@@ -40,11 +39,8 @@ void main(){
   // vignette on top of the flare just reads as a dirty lens
   float vig = 1.0 - smoothstep(0.28, 1.32, length((uv - 0.5) * vec2(uAspect, 1.0)));
   c *= mix(0.88, 1.0, vig);
-  c = pow(max(c, 0.0), vec3(1.0 / 2.2));
-  // Grain belongs in display space and in illuminated material. Adding it
-  // before gamma lifted half the empty pixels into conspicuous grey specks.
-  float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
-  c += (hash21(uv * uRes + floor(uTime * 24.0) * 173.0) - 0.5)
-     * uGrain * smoothstep(0.015, 0.14, luma);
+  // Three's exact transfer retains the sRGB linear toe in near-black space.
+  // The old 1/2.2 approximation lifted the sky and flattened dark disk lanes.
+  c = sRGBTransferOETF(vec4(max(c, 0.0), 1.0)).rgb;
   gl_FragColor = vec4(c, 1.0);
 }

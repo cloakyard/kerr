@@ -53,6 +53,7 @@ h1{font:400 clamp(48px,5.2vw,78px)/1.1 var(--serif);letter-spacing:-.055em;margi
 .tr{position:absolute;top:30px;right:var(--gutter);display:flex;gap:7px;pointer-events:auto;align-items:center}
 [hidden]{display:none!important}
 .btn{background:rgba(8,12,14,.48);border:1px solid #c9d2c42c;color:#d5d8cc;font-size:8px;letter-spacing:.075em;padding:10px 12px;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}.btn:hover{color:var(--flare);background:#dae0cd12;border-color:#d4b68c70}.btn.on{color:var(--ion);border-color:var(--ion)}.btn kbd{font:7px var(--mono);margin-left:11px;color:#7e8984}.btn>span{margin-left:8px}.help-btn{font-size:12px;width:35px;padding:8px}.tr .btn{height:34px}
+#bFull{display:inline-flex;align-items:center;justify-content:center;gap:8px}#bFull .fullscreen-label{margin:0}.fullscreen-icon{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:square;stroke-linejoin:miter;flex-shrink:0}#bFull .i-contract,#bFull.fullscreen .i-expand{display:none}#bFull.fullscreen .i-contract{display:block}
 
 /* A single quiet music deck keeps audio, its spectrum and its timeline together. */
 .deck{position:absolute;left:var(--gutter);right:var(--gutter);bottom:calc(24px + var(--safe-bottom));pointer-events:auto;border-top:1px solid #ced4c433;padding-top:16px}
@@ -105,7 +106,7 @@ h1{font:400 clamp(48px,5.2vw,78px)/1.1 var(--serif);letter-spacing:-.055em;margi
 }
 /* Compact layouts reveal secondary controls on demand instead of covering the scene. */
 @media(max-width:1100px),(max-height:560px){
- :root{--gutter:24px}.wordmark{font-size:23px}.brand-mark{width:30px;height:30px}.identity{gap:10px}.identity-sub,.identity-rule{display:none}.tr{gap:6px}.tr .btn kbd{display:none}#bView{display:block}.tr #bFull{font-size:0;padding:8px 10px}.tr #bFull>span{font-size:18px;margin:0}.tr .help-btn{font-size:12px;width:38px}.tl{display:none}
+ :root{--gutter:24px}.wordmark{font-size:23px}.brand-mark{width:30px;height:30px}.identity{gap:10px}.identity-sub,.identity-rule{display:none}.tr{gap:6px}.tr .btn kbd{display:none}#bView{display:block}.tr #bFull{padding:8px 10px}.tr #bFull .fullscreen-label{display:none}.tr .help-btn{font-size:12px;width:38px}.tl{display:none}
  #scenePanel{position:absolute;top:calc(80px + var(--safe-top));left:auto;right:max(var(--gutter),var(--safe-right));width:min(300px,calc(100vw - var(--gutter)*2));padding:21px 23px;display:block;background:rgba(7,11,13,.97);backdrop-filter:blur(18px);border:1px solid #a3b2a333;box-shadow:0 22px 70px #0009;max-height:calc(100dvh - 104px - var(--safe-top) - var(--safe-bottom));overflow:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;pointer-events:none;z-index:5;transform:translateY(-7px);transition:opacity .2s,transform .2s,visibility .2s}
  body.scene-open #scenePanel{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .2s,transform .2s}
  #scenePanel .panel-label{display:block;margin-bottom:9px;font-size:9px}#scenePanel .control-row{display:flex;min-height:47px;font-size:12px}#scenePanel select{font-size:12px;width:160px;max-width:160px;min-height:36px;background-position:calc(100% - 4px) 16px,100% 16px}#scenePanel .response-label{font-size:11px;margin-top:19px}#scenePanel output{font-size:11px}#scenePanel #response{height:38px;margin-top:5px}#scenePanel .text-btn{margin-top:4px;font-size:11px;min-height:38px}
@@ -123,7 +124,7 @@ h1{font:400 clamp(48px,5.2vw,78px)/1.1 var(--serif);letter-spacing:-.055em;margi
  #help{padding:18px}#help .panel{padding:25px 23px;max-height:calc(100dvh - 36px - var(--safe-top) - var(--safe-bottom))}#help h2{font-size:28px}#help dl{gap:11px 19px;font-size:10px}#help dd{font-size:12px}
 }
 @media(max-width:600px){
- :root{--gutter:18px}.brand-mark{width:26px;height:26px}.wordmark{font-size:20px}.identity{gap:8px}.tr{gap:5px}.tr .btn{padding:9px;font-size:9px}.tr .help-btn{width:32px;font-size:12px}.tr #bFull{padding:8px}.tr #bFull>span{font-size:17px}.world-status{font-size:6px}
+ :root{--gutter:18px}.brand-mark{width:26px;height:26px}.wordmark{font-size:20px}.identity{gap:8px}.tr{gap:5px}.tr .btn{padding:9px;font-size:9px}.tr .help-btn{width:32px;font-size:12px}.tr #bFull{padding:8px}.world-status{font-size:6px}
  .track-title{font-size:17px}.track-kicker{font-size:7px;letter-spacing:.025em}#audioStatus{max-width:100px;overflow:hidden;text-overflow:ellipsis}.audio-actions .btn{font-size:9px;padding:9px}#bVoice{min-width:68px}.vol>span{display:none}.vtrack{width:80px}.signal-label{font-size:6px}.intro-description{font-size:11px}.sub{font-size:17px}.seg2 button{font-size:8px}.hint{font-size:6px;gap:9px}.hint span+span::before{margin-right:9px}
 }
 @media(max-width:380px){

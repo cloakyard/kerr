@@ -13,7 +13,7 @@
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="MIT License" /></a>
     <img src="https://img.shields.io/badge/platform-Web-blue" alt="Platform: Web" />
     <img src="https://img.shields.io/badge/dependencies-1-brightgreen" alt="One dependency" />
-    <img src="https://img.shields.io/badge/payload-139%20KB%20br-brightgreen" alt="139 KB brotli" />
+    <img src="https://img.shields.io/badge/payload-142%20KB%20br-brightgreen" alt="142 KB brotli" />
   </p>
 
 </div>
@@ -108,7 +108,9 @@ Distances are in Schwarzschild radii (`r_s = 1`, so `M = 0.5`). The HUD reports 
 
 **Where the camera goes.** DNEG shot Gargantua from `r_c = 74.1M` and `θ_c = 86.56°` — 3.4° above the disk plane. The Film view begins at that grazing angle, and Close passage also stays near the plane. Oblique, edge-on, top-down and underside views hold fixed angles; the cardinal views land exactly at 0° and ±90°. Drag can pass continuously through both poles. Film and Close passage retain the chosen elevation and resume their gentle orbit after release, so the background stars keep moving; inspection views hold the chosen orientation. Reduced motion keeps automatic drift off. Reset restores the selected preset. The black hole stays at `a/M = 0.6` across the score, so inspecting its geometry is independent of the music. Framing pulls back for portrait screens and makes room beside the introductory copy on wide screens.
 
-**Veiling flare.** A second blur chain at an eighth resolution supplies wide, near-neutral optical scatter alongside the tighter bloom. Its strength and shape are artist-tuned approximations, with enough contrast to retain the disk structure and central shadow. DNEG used measured IMAX lens point-spread functions; this renderer does not reproduce that calibrated optical model, and its shadow brightness is a grading choice rather than a measured match to a film frame.
+**Veiling flare.** A filtered highlight pass eases into bloom around its luminance threshold. Separate half- and quarter-resolution glow preserve fine structures, then an eighth-resolution chain supplies wide, near-neutral optical scatter. Its strength and shape are artist-tuned approximations, with enough contrast to retain the disk structure and central shadow. DNEG used measured IMAX lens point-spread functions; this renderer does not reproduce that calibrated optical model, and its shadow brightness is a grading choice rather than a measured match to a film frame.
+
+**Display finish.** ACES tone mapping and Three's exact sRGB transfer preserve the near-black sky and dark disk lanes. A contrast-aware spatial resolve smooths bright edges before the final display-space grain. It uses the actual scene buffer dimensions as adaptive quality changes, and retains no temporal history that could smear during a drag. Subpixel higher-order images can still remain dotted on small screens; this is antialiasing, not additional ray integration. See the [r186 upgrade and visual review](docs/THREE-R186-REVIEW.md).
 
 ---
 
@@ -150,17 +152,17 @@ Auto refreshes after device changes, context startup/resume, output-sink changes
 
 | Area | Technology |
 | --- | --- |
-| Rendering | WebGL via [three.js r185](https://threejs.org/) (vendored, tree-shaken) |
-| Shading | GLSL — RK4 raymarch, emitting and absorbing disk volume, bloom and veiling flare, ACES tonemap |
+| Rendering | WebGL via [three.js r186](https://github.com/mrdoob/three.js/releases/tag/r186) (vendored, tree-shaken) |
+| Shading | GLSL — RK4 raymarch, emitting and absorbing disk volume, multiscale bloom, ACES/sRGB and spatial edge resolve |
 | Audio | [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) — oscillators, biquads, convolution reverb, waveshaping |
 | Build | esbuild, driven by ~350 lines of Node across `scripts/`. No framework. |
 | Deployment | [Cloudflare Workers](https://workers.cloudflare.com/) as static assets, at [kerr.cloakyard.com](https://kerr.cloakyard.com/) |
 
 **Why no framework.** One canvas, no routes, no components, no data fetching, nothing in the DOM but a HUD. React would add a runtime and a reconciler to a page whose HUD is already redrawn imperatively sixty times a second — the one shape its model is worst at. Astro solves routing and content, and there is neither. What this needed was module boundaries and a build step, and neither requires a framework.
 
-**The one dependency.** three.js supplies 24 symbols: the renderer, render targets, two cameras, `Points`, some vectors. Everything else is hand-written GLSL. [`src/three-entry.js`](src/three-entry.js) imports exactly those by name and `npm run vendor:three` tree-shakes them into `vendor/three.bundle.js`. Since three ships ESM only, the vendored artefact is a bundle rather than a copied file — and it is **committed and hash-pinned**, so a build never resolves or re-shakes the dependency and `npm run check` can prove the shipped bytes are the pinned ones. [`src/three.js`](src/three.js) is the single seam that reads it.
+**The one runtime dependency.** three.js supplies 23 symbols: the renderer, render targets, two cameras, `Points`, some vectors. Everything else is hand-written GLSL. [`src/three-entry.js`](src/three-entry.js) imports exactly those by name and `npm run vendor:three` tree-shakes them into `vendor/three.bundle.js`. Since three ships ESM only, the vendored artefact is a bundle rather than a copied file — and it is **committed and hash-pinned**, so a build never resolves or re-shakes the dependency and `npm run check` can prove the shipped bytes are the pinned ones. [`src/three.js`](src/three.js) is the single seam that reads it.
 
-Colour management is off and the renderer left linear: every shader already ends in an ACES tonemap and a gamma encode, so letting three convert too would apply the transform twice.
+Colour management is off and the renderer left linear: scene, bloom and flare targets contain linear HDR values. Only the compositor applies ACES and Three's sRGB transfer; the final resolve operates on display-encoded pixels. Another renderer-level conversion would apply the transform twice. Fullscreen passes use one triangle, and render targets have no depth buffers.
 
 ---
 
@@ -209,6 +211,8 @@ src/
 
 ## 🚀 Getting started
 
+Use **Node.js 22 or newer** (required by Wrangler 4.130). The pinned toolchain is Three.js 0.186.0, esbuild 0.28.2 and Wrangler 4.130.0. A scoped override patches Miniflare's Sharp dependency to 0.35.4; it can be removed once Miniflare pins a patched version itself.
+
 ```bash
 git clone https://github.com/cloakyard/kerr.git
 cd kerr
@@ -243,10 +247,13 @@ Bumping three.js: `npm i -D three@latest`, `npm run vendor:three`, then paste th
 | **Kerr geometry** | horizon and ISCO against published values — 6M at `a = 0`, 4.2330M at `a = 0.5`, 2.3209M at `a = 0.9` |
 | **Adaptive quality** | never leaves its band under 20,000 random frame rates; settles at both ends; survives `NaN` |
 | **Auto voicing** | active/default sink matching, wired headphones and external speakers, unknown-output fallback, route changes, async races and manual overrides |
-| **Music analysis and transport** | silence, bounded frequency envelopes, time-based smoothing, onset/tempo recovery, source switching and rejected playback |
+| **Music analysis and transport** | silence, bounded frequency envelopes, time-based smoothing, onset/tempo recovery, source switching, stale request errors and delayed-scheduler recovery |
 | **Reduced-motion camera** | stable automatic framing through a loud section, manual shot/zoom access, and a valid portrait camera basis |
 | **All-angle camera** | exact cardinal angles, finite orthonormal frames at both poles, continuous full turns, steady inspection views, and resumed cinematic drift after touch release/cancellation |
 | **GLSL includes** | diamond and circular includes resolve once; literal smoothstep edges stay in their defined order |
+| **GPU postprocessing** | sRGB shadows, HDR headroom, bloom hue and thin-filament stability, diagonal antialiasing, isolated stars, black grain floor and unsigned-byte fallback |
+| **Fullscreen** | actual entry/exit state, external exit, keyboard shortcut, compact icons and rejected requests |
+| **Interaction recovery** | interrupted timeline gestures stop seeking; selecting the same local file again restarts its import |
 | **The artefact** | tags balanced, nothing external, shaders present, payload inside budget, README quoting the size the build makes |
 | **Structure** | no import cycles, no orphan modules, no dead exports, layering intact |
 | **The real page** | boots under production headers, compiles and draws without errors, checks actual framebuffer pixels, and exercises sensitivity, shortcut isolation and overlay focus |
@@ -296,7 +303,7 @@ The guarantee is unchanged and still browser-enforced. [`test/pwa.test.js`](test
 
 ## ⚙️ Performance
 
-The whole application is one 626 KB document — **139 KB over the wire** after brotli — served in a single request with no dependency waterfall.
+The whole application is one 639 KB document — **142 KB over the wire** after brotli — served in a single request with no dependency waterfall.
 
 The renderer measures real elapsed frame time and trades resolution scale against march step count toward a 60 fps target, between `0.5×/96` steps and `0.92×/220`. Achieved frame rate depends on the browser, viewport and GPU; automated SwiftShader tests are correctness checks, not a hardware benchmark. Hidden tabs skip rendering and reset timing when visibility changes.
 

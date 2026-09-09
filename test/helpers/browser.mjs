@@ -165,7 +165,8 @@ class Session {
 
   handle(msg) {
     if (msg.id && this.pending.has(msg.id)) {
-      const { resolve, reject } = this.pending.get(msg.id);
+      const { resolve, reject, timer } = this.pending.get(msg.id);
+      clearTimeout(timer);
       this.pending.delete(msg.id);
       msg.error ? reject(new Error(msg.error.message)) : resolve(msg.result);
     } else if (msg.method) {
@@ -179,11 +180,11 @@ class Session {
     const payload = { id, method, params };
     if (this.sessionId) payload.sessionId = this.sessionId;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify(payload));
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (this.pending.delete(id)) reject(new Error(`${method} timed out`));
       }, 30000);
+      this.pending.set(id, { resolve, reject, timer });
+      this.ws.send(JSON.stringify(payload));
     });
   }
 
@@ -247,6 +248,10 @@ export async function launch(chromePath, { softwareRendering = true } = {}) {
 
   const cleanup = async () => {
     kill();
+    // Chrome helpers can inherit stderr and outlive the browser process.
+    // Close our pipes explicitly so they cannot keep the test worker alive.
+    child.stdout?.destroy();
+    child.stderr?.destroy();
     process.removeListener('exit', kill);
     await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
   };

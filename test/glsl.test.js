@@ -2,7 +2,7 @@
    It replaced `${GLSL_NOISE}` string interpolation, and it has one property
    that is easy to get wrong and impossible to spot by eye: an include pulled
    in twice is a redeclaration error at shader compile time, not a duplicate
-   line. Both bh.frag and final.frag include noise.glsl. */
+   line. The volume and display resolve each include their noise helper. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm, readdir } from 'node:fs/promises';
@@ -86,16 +86,16 @@ test('only a whole-line directive counts', () =>
   }));
 
 test('the real shaders resolve, and each carries the noise helpers exactly once', async () => {
-  for (const name of ['bh.frag', 'final.frag']) {
+  for (const [name, helper] of [['bh.frag', 'hash31'], ['resolve.frag', 'hash21']]) {
     const out = await expandIncludes(join(SHADERS, name));
-    assert.equal(out.match(/float hash21\(/g).length, 1, `${name} has duplicate noise helpers`);
+    assert.equal(out.match(new RegExp(`float ${helper}\\(`, 'g')).length, 1, `${name} has duplicate noise helpers`);
     assert.ok(!out.includes('#include'), `${name} still has an unresolved include`);
     assert.ok(out.includes('void main()'), `${name} lost its entry point`);
   }
 });
 
 test('every shader defines main and declares a precision', async () => {
-  for (const name of ['bh.frag', 'final.frag', 'bright.frag', 'blur.frag', 'particles.frag']) {
+  for (const name of ['bh.frag', 'final.frag', 'resolve.frag', 'bright.frag', 'blur.frag', 'particles.frag']) {
     const out = await expandIncludes(join(SHADERS, name));
     assert.match(out, /precision\s+(low|medium|high)p\s+float/, `${name} has no float precision`);
     assert.match(out, /void main\(\)/, `${name} has no main`);
@@ -105,8 +105,8 @@ test('every shader defines main and declares a precision', async () => {
 test('no shader carries a stray backtick', async () => {
   // The reason these are files at all: a backtick used to end the template
   // literal early and take the whole page down with it.
-  for (const name of ['bh.frag', 'final.frag', 'bright.frag', 'blur.frag',
-                      'particles.frag', 'particles.vert', 'quad.vert', 'noise.glsl']) {
+  for (const name of ['bh.frag', 'final.frag', 'resolve.frag', 'bright.frag', 'blur.frag',
+                      'particles.frag', 'particles.vert', 'quad.vert', 'noise.glsl', 'grain.glsl']) {
     const out = await expandIncludes(join(SHADERS, name));
     assert.ok(!out.includes('`'), `${name} contains a backtick`);
     assert.ok(!out.includes('${'), `${name} contains a template interpolation`);

@@ -17,8 +17,13 @@ import BH_FS from './shaders/bh.frag';
 import BRIGHT_FS from './shaders/bright.frag';
 import BLUR_FS from './shaders/blur.frag';
 import FINAL_FS from './shaders/final.frag';
+import RESOLVE_FS from './shaders/resolve.frag';
 
-const quadGeo = new THREE.PlaneGeometry(2, 2);
+// One oversized triangle avoids duplicate fragment-helper work along the
+// diagonal of a two-triangle quad, especially in the expensive ray pass.
+const quadGeo = new THREE.BufferGeometry();
+quadGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1,-1,0, 3,-1,0, -1,3,0]), 3));
+quadGeo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0,0, 2,0, 0,2]), 2));
 const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 const quadScene = new THREE.Scene();
 const quadMesh = new THREE.Mesh(quadGeo, new THREE.MeshBasicMaterial());
@@ -41,21 +46,26 @@ export const uBH = {
 };
 
 const uFin = {
-  uScene:{value:null}, uBloom:{value:null}, uFlare:{value:null}, uRes:{value:new THREE.Vector2(1,1)},
+  uScene:{value:null}, uBloom:{value:null}, uBloomWide:{value:null}, uFlare:{value:null},
   uBhUv:{value:new THREE.Vector2(0.5,0.5)}, uAspect:{value:1},
-  uCA:{value:1}, uExposure:{value:1.05}, uTime:{value:0}, uGrain:{value:0.003},
+  uCA:{value:1}, uExposure:{value:1.05},
   uStreak:{value:0},
   uFlash:{value:0}, uBloomAmt:{value:0.85}, uFlareAmt:{value:0.55}
+};
+const uResolve = {
+  tDiffuse:{value:null}, uTexel:{value:new THREE.Vector2(1,1)},
+  uRes:{value:new THREE.Vector2(1,1)}, uTime:{value:0}, uGrain:{value:0.003}
 };
 
 const matBH     = new THREE.ShaderMaterial({ vertexShader:QUAD_VS, fragmentShader:BH_FS, uniforms:uBH, depthTest:false, depthWrite:false });
 const matBright = new THREE.ShaderMaterial({ vertexShader:QUAD_VS, fragmentShader:BRIGHT_FS,
   // low enough that the whole disk body feeds the flare, not just the core —
   // veiling flare is scatter off everything bright, not a highlight effect
-  uniforms:{ tDiffuse:{value:null}, uThresh:{value:0.55} }, depthTest:false, depthWrite:false });
+  uniforms:{ tDiffuse:{value:null}, uTexel:{value:new THREE.Vector2(1,1)}, uThresh:{value:0.55} }, depthTest:false, depthWrite:false });
 const matBlur   = new THREE.ShaderMaterial({ vertexShader:QUAD_VS, fragmentShader:BLUR_FS,
   uniforms:{ tDiffuse:{value:null}, uDir:{value:new THREE.Vector2()} }, depthTest:false, depthWrite:false });
 const matFinal  = new THREE.ShaderMaterial({ vertexShader:QUAD_VS, fragmentShader:FINAL_FS, uniforms:uFin, depthTest:false, depthWrite:false });
+const matResolve = new THREE.ShaderMaterial({ vertexShader:QUAD_VS, fragmentShader:RESOLVE_FS, uniforms:uResolve, depthTest:false, depthWrite:false, toneMapped:false });
 
 function pass(mat, target){
   quadMesh.material = mat;
@@ -65,7 +75,7 @@ function pass(mat, target){
 }
 
 /* ---- render targets ---- */
-let rtP, rtScene, rtA, rtB, rtC, rtD;
+let rtP, rtScene, rtA, rtB, rtC, rtD, rtMidA, rtMidB, rtDisplay;
 let bufW = 1, bufH = 1;
 const projectedOrigin = new THREE.Vector3();
 const PALETTES = {
@@ -74,24 +84,30 @@ const PALETTES = {
   polar: new THREE.Vector3(0.28, 0.64, 1.0)
 };
 
-function makeRT(w, h){
+function makeRT(w, h, type = HDR){
   return new THREE.WebGLRenderTarget(Math.max(2, w | 0), Math.max(2, h | 0), {
     minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter,
-    format:THREE.RGBAFormat, type:HDR, depthBuffer:false, stencilBuffer:false
+    format:THREE.RGBAFormat, type, depthBuffer:false, stencilBuffer:false
   });
 }
 
 function allocRT(){
   const w = Math.floor(bufW * Q.scale), h = Math.floor(bufH * Q.scale);
-  [rtP, rtScene, rtA, rtB, rtC, rtD].forEach(r => r && r.dispose());
+  [rtP, rtScene, rtA, rtB, rtC, rtD, rtMidA, rtMidB, rtDisplay].forEach(r => r && r.dispose());
   rtP = makeRT(w, h); rtScene = makeRT(w, h);
   rtA = makeRT(w / 2, h / 2); rtB = makeRT(w / 2, h / 2);
+  rtMidA = makeRT(w / 4, h / 4); rtMidB = makeRT(w / 4, h / 4);
+  // Display-encoded pixels need no HDR storage. Antialias this target using
+  // its own texel size, then reconstruct at the canvas's full resolution.
+  rtDisplay = makeRT(w, h, THREE.UnsignedByteType);
   // eighth res for the veiling flare: it needs a reach of a couple of hundred
   // pixels, which is free down here and ruinous at half res
   rtC = makeRT(w / 8, h / 8); rtD = makeRT(w / 8, h / 8);
   uBH.uRes.value.set(w, h);
   uBH.uAspect.value = w / h;
   uFin.uAspect.value = w / h;
+  matBright.uniforms.uTexel.value.set(1 / rtScene.width, 1 / rtScene.height);
+  uResolve.uTexel.value.set(1 / rtDisplay.width, 1 / rtDisplay.height);
 }
 
 /* Sizing the drawing buffers only. The HUD lays itself out on the same event
@@ -105,7 +121,7 @@ export function resize(){
   bufW = Math.floor(w * Q.dpr); bufH = Math.floor(h * Q.dpr);
   allocRT();
   pCam.aspect = w / h; pCam.updateProjectionMatrix();
-  uFin.uRes.value.set(bufW, bufH);
+  uResolve.uRes.value.set(bufW, bufH);
 }
 
 /* Measured fps in, reallocation out. The thresholds are quality.js's business;
@@ -174,7 +190,7 @@ export function renderFrame({ cam, look, audio, rings, time, dt, experience = {}
   uP.uSizeScale.value = Q.scale * Q.dpr * (0.85 + audio.level * 0.5);
   uP.uChroma.value.copy(uBH.uChroma.value);
 
-  uFin.uTime.value = time;
+  uResolve.uTime.value = time;
   uFin.uCA.value = look.ca * (0.10 + audio.level * 0.22) * REDUCED;
   uFin.uExposure.value = look.exp;
   uFin.uFlash.value = cam.flash * REDUCED;
@@ -194,19 +210,19 @@ export function renderFrame({ cam, look, audio, rings, time, dt, experience = {}
 
   matBright.uniforms.tDiffuse.value = rtScene.texture;
   pass(matBright, rtA);
-  const bw = 1 / (bufW * Q.scale * 0.5), bh = 1 / (bufH * Q.scale * 0.5);
+  const bw = 1 / rtA.width, bh = 1 / rtA.height;
   matBlur.uniforms.tDiffuse.value = rtA.texture; matBlur.uniforms.uDir.value.set(bw, 0); pass(matBlur, rtB);
   matBlur.uniforms.tDiffuse.value = rtB.texture; matBlur.uniforms.uDir.value.set(0, bh); pass(matBlur, rtA);
-  matBlur.uniforms.tDiffuse.value = rtA.texture; matBlur.uniforms.uDir.value.set(bw * 2.6, 0); pass(matBlur, rtB);
-  matBlur.uniforms.tDiffuse.value = rtB.texture; matBlur.uniforms.uDir.value.set(0, bh * 2.6); pass(matBlur, rtA);
+  // Retain tight bloom and build a separate middle scale instead of repeatedly
+  // smearing the same highlights. Filaments retain their own local contrast.
+  const mw = 1 / rtMidA.width, mh = 1 / rtMidA.height;
+  matBlur.uniforms.tDiffuse.value = rtA.texture; matBlur.uniforms.uDir.value.set(mw, 0); pass(matBlur, rtMidB);
+  matBlur.uniforms.tDiffuse.value = rtMidB.texture; matBlur.uniforms.uDir.value.set(0, mh); pass(matBlur, rtMidA);
 
-  /* Veiling flare: drop the same bright pass to an eighth and keep widening.
-     Rendering into rtC at a quarter of rtA's linear size is itself the
-     downsample, then three separable pairs at rising step reach roughly 200
-     source pixels — a genuine soft halo around the disk rather than the tight
-     rim the half-res chain gives. */
-  const fw = 1 / (bufW * Q.scale * 0.125), fh = 1 / (bufH * Q.scale * 0.125);
-  matBlur.uniforms.tDiffuse.value = rtA.texture; matBlur.uniforms.uDir.value.set(fw, 0); pass(matBlur, rtD);
+  /* Downsample progressively to avoid a single 4× jump into the broad flare.
+     The final pair spreads actual emitted light across the large lens halo. */
+  const fw = 1 / rtC.width, fh = 1 / rtC.height;
+  matBlur.uniforms.tDiffuse.value = rtMidA.texture; matBlur.uniforms.uDir.value.set(fw, 0); pass(matBlur, rtD);
   matBlur.uniforms.tDiffuse.value = rtD.texture; matBlur.uniforms.uDir.value.set(0, fh); pass(matBlur, rtC);
   matBlur.uniforms.tDiffuse.value = rtC.texture; matBlur.uniforms.uDir.value.set(fw * 3.4, 0); pass(matBlur, rtD);
   matBlur.uniforms.tDiffuse.value = rtD.texture; matBlur.uniforms.uDir.value.set(0, fh * 3.4); pass(matBlur, rtC);
@@ -215,6 +231,9 @@ export function renderFrame({ cam, look, audio, rings, time, dt, experience = {}
 
   uFin.uScene.value = rtScene.texture;
   uFin.uBloom.value = rtA.texture;
+  uFin.uBloomWide.value = rtMidA.texture;
   uFin.uFlare.value = rtC.texture;
-  pass(matFinal, null);
+  pass(matFinal, rtDisplay);
+  uResolve.tDiffuse.value = rtDisplay.texture;
+  pass(matResolve, null);
 }
